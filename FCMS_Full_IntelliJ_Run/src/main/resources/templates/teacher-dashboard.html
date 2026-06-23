@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Dashboard - FCMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../static/css/fcms.css" />
+</head>
+<body>
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><i data-lucide="book-open"></i></div>
+      <div><div class="brand-title">FCMS</div><div class="brand-sub">Teacher Portal</div></div>
+    </div>
+    <nav class="nav">
+      <a class="active" th:href="@{/teacher/dashboard}" href="#"><i data-lucide="home"></i> Home</a>
+      <a th:href="@{/teacher/classes}" href="#"><i data-lucide="layout-grid"></i> My Classes</a>
+      <a th:href="@{/teacher/question-bank}" href="#"><i data-lucide="book-open"></i> Question Bank</a>
+      <a th:href="@{/teacher/progress}" href="#"><i data-lucide="bar-chart-2"></i> Progress</a>
+    </nav>
+    <div class="profile-box">
+      <div class="avatar" th:text="${#strings.substring(teacherName ?: 'TP',0,2)}">TP</div>
+      <div class="truncate"><div class="profile-name" th:text="${teacherName ?: 'Prof. Tran Phuong'}">Prof. Tran Phuong</div><div class="profile-role">teacher</div></div>
+    </div>
+  </aside>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="top-title">My Classes — <span th:text="${semester ?: 'Fall 2025'}">Fall 2025</span></div>
+      <div class="switcher">
+        <a class="active" th:href="@{/teacher/dashboard}" href="teacher-dashboard.html">Teacher Dashboard</a>
+        <a th:href="@{/student/learning-path}" href="student-learning-path.html">Learning Path</a>
+        <a th:href="@{/student/ai-assistant}" href="ai-assistant.html">AI Assistant</a>
+        <a th:href="@{/student/assignment}" href="assignment-submission.html">Assignment</a>
+      </div>
+      <button class="icon-btn relative"><i data-lucide="bell"></i><span class="dot"></span></button>
+      <div class="avatar" style="width:34px;height:34px" th:text="${#strings.substring(teacherName ?: 'TP',0,2)}">TP</div>
+    </header>
+
+    <main class="content">
+      <div class="page-title-row">
+        <div>
+          <h1 class="h1">My Classes</h1>
+          <div class="sub">Manage and track your active courses</div>
+        </div>
+        <a class="btn btn-primary" th:href="@{/teacher/classes/create}" href="#"><i data-lucide="plus"></i> Create New Class</a>
+      </div>
+
+      <section class="grid grid-4 mb-4">
+        <div class="card card-pad stat-card">
+          <div class="stat-icon bg-primary-light text-primary"><i data-lucide="layout-grid"></i></div>
+          <div><div class="stat-label">Active Classes</div><div class="stat-value" th:text="${activeClassCount ?: 6}">6</div></div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-icon bg-orange-light text-accent"><i data-lucide="users"></i></div>
+          <div><div class="stat-label">Total Students</div><div class="stat-value" th:text="${totalStudents ?: 238}">238</div></div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-icon bg-green-light text-green"><i data-lucide="trending-up"></i></div>
+          <div><div class="stat-label">Avg. Completion</div><div class="stat-value" th:text="${avgCompletion ?: '48%'}">48%</div></div>
+        </div>
+        <div class="card card-pad stat-card">
+          <div class="stat-icon bg-purple-light" style="color:var(--purple)"><i data-lucide="calendar"></i></div>
+          <div><div class="stat-label">This Semester</div><div class="stat-value" th:text="${semester ?: 'Fall 2025'}">Fall 2025</div></div>
+        </div>
+      </section>
+
+      <div class="search-row">
+        <div class="search-wrap"><i data-lucide="search"></i><input class="input search" placeholder="Search classes..." name="keyword" /></div>
+        <div class="small muted"><span th:text="${activeClassCount ?: 6}">6</span> classes</div>
+      </div>
+
+      <section class="grid grid-3">
+        <article class="card class-card" th:each="classRoom : ${classes}">
+          <div class="class-top" th:style="|border-top-color:${classRoom.color ?: '#1a73e8'}|">
+            <div class="flex items-center gap-3">
+              <div class="class-icon bg-primary-light text-primary"><i data-lucide="book-open"></i></div>
+              <div class="ml-auto"><button class="icon-btn"><i data-lucide="more-vertical"></i></button></div>
+            </div>
+            <h3 class="class-name" th:text="${classRoom.name}">Software Engineering</h3>
+            <div class="class-semester" th:text="${classRoom.semester}">Fall 2025</div>
+          </div>
+          <div class="code-row">
+            <div class="code-badge" th:text="${classRoom.classCode}">SE2024</div>
+            <button class="icon-btn" data-copy="SE2024" th:attr="data-copy=${classRoom.classCode}"><i data-lucide="copy"></i></button>
+          </div>
+          <div class="meta-row">
+            <span><i data-lucide="users"></i> <span th:text="${classRoom.studentCount}">38</span> students</span>
+            <span><i data-lucide="clock"></i> Updated <span th:text="${classRoom.updatedText}">2h ago</span></span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-head"><span class="muted">Completion</span><strong th:text="${classRoom.completion + '%'}">64%</strong></div>
+            <div class="progress"><span style="width:64%" th:style="|width:${classRoom.completion}%|"></span></div>
+          </div>
+          <div class="card-footer"><a class="open-link" th:href="@{/teacher/classes/{id}(id=${classRoom.id})}" href="#">Open Class <i data-lucide="chevron-right"></i></a></div>
+        </article>
+
+        <!-- Static fallback card when opening this file outside Thymeleaf -->
+        <article class="card class-card" th:if="${classes == null}">
+          <div class="class-top" style="border-top-color:#f26522"><div class="class-icon bg-orange-light text-accent"><i data-lucide="book-open"></i></div><h3 class="class-name">Data Structures & Algorithms</h3><div class="class-semester">Fall 2025</div></div>
+          <div class="code-row"><div class="code-badge" style="background:#fef0e8;color:#f26522">DSA301</div><button class="icon-btn" data-copy="DSA301"><i data-lucide="copy"></i></button></div>
+          <div class="meta-row"><span><i data-lucide="users"></i> 45 students</span><span><i data-lucide="clock"></i> Yesterday</span></div>
+          <div class="progress-wrap"><div class="progress-head"><span class="muted">Completion</span><strong style="color:#f26522">42%</strong></div><div class="progress"><span style="width:42%;background:#f26522"></span></div></div>
+          <div class="card-footer"><a class="open-link" style="background:#fef0e8;color:#f26522" href="#">Open Class <i data-lucide="chevron-right"></i></a></div>
+        </article>
+        <article class="card class-card" th:if="${classes == null}">
+          <div class="class-top" style="border-top-color:#34a853"><div class="class-icon bg-green-light text-green"><i data-lucide="book-open"></i></div><h3 class="class-name">Web Development Fundamentals</h3><div class="class-semester">Fall 2025</div></div>
+          <div class="code-row"><div class="code-badge" style="background:#e6f4ea;color:#34a853">WDF102</div><button class="icon-btn" data-copy="WDF102"><i data-lucide="copy"></i></button></div>
+          <div class="meta-row"><span><i data-lucide="users"></i> 52 students</span><span><i data-lucide="clock"></i> 3d ago</span></div>
+          <div class="progress-wrap"><div class="progress-head"><span class="muted">Completion</span><strong style="color:#34a853">78%</strong></div><div class="progress"><span style="width:78%;background:#34a853"></span></div></div>
+          <div class="card-footer"><a class="open-link" style="background:#e6f4ea;color:#34a853" href="#">Open Class <i data-lucide="chevron-right"></i></a></div>
+        </article>
+      </section>
+    </main>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script th:src="@{/js/fcms.js}" src="../static/js/fcms.js"></script>
+</body>
+</html>

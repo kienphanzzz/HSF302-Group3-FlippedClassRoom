@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Study Assistant - FCMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../static/css/fcms.css" />
+</head>
+<body>
+<div class="ai-page">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo"><i data-lucide="book-open"></i></div><div><div class="brand-title">FCMS</div><div class="brand-sub">Student Portal</div></div></div>
+    <nav class="nav">
+      <a th:href="@{/student/dashboard}" href="#"><i data-lucide="home"></i> Dashboard</a>
+      <a class="active" th:href="@{/student/courses}" href="#"><i data-lucide="book-open"></i> My Courses</a>
+      <a th:href="@{/student/assignments}" href="#"><i data-lucide="clipboard-list"></i> Assignments</a>
+      <a th:href="@{/student/progress}" href="#"><i data-lucide="bar-chart-2"></i> Progress</a>
+    </nav>
+    <div class="profile-box"><div class="avatar student" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div><div class="truncate"><div class="profile-name" th:text="${studentName ?: 'Alex Nguyen'}">Alex Nguyen</div><div class="profile-role">student</div></div></div>
+  </aside>
+
+  <section class="doc-pane">
+    <header class="topbar">
+      <a class="btn btn-outline btn-sm" th:href="@{/student/learning-path}" href="student-learning-path.html"><i data-lucide="chevron-left"></i> Topic 2</a>
+      <div class="top-title" th:text="${materialTitle ?: 'Requirements Elicitation Workshop'}">Requirements Elicitation Workshop</div>
+      <div class="switcher">
+        <a th:href="@{/teacher/dashboard}" href="teacher-dashboard.html">Teacher Dashboard</a>
+        <a th:href="@{/student/learning-path}" href="student-learning-path.html">Learning Path</a>
+        <a class="active" th:href="@{/student/ai-assistant}" href="ai-assistant.html">AI Assistant</a>
+        <a th:href="@{/student/assignment}" href="assignment-submission.html">Assignment</a>
+      </div>
+      <div class="avatar student" style="width:34px;height:34px" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
+    </header>
+
+    <main class="doc-content">
+      <div class="small muted mb-4 flex items-center gap-2">
+        <span th:text="${courseCode ?: 'SE2024'}">SE2024</span><i data-lucide="chevron-right"></i><span>Topic 2</span><i data-lucide="chevron-right"></i><strong class="text-primary">Reading Material</strong>
+      </div>
+      <article class="doc-card">
+        <div class="doc-header">
+          <div class="node-icon bg-cyan-light" style="color:#0891b2"><i data-lucide="file-text"></i></div>
+          <div><strong th:text="${materialTitle ?: 'Use Case Diagrams — Lecture Slides'}">Use Case Diagrams — Lecture Slides</strong><div class="small muted">PDF · 10 min read · Topic 2</div></div>
+          <a class="btn btn-outline btn-sm ml-auto" th:href="@{/student/materials/download/{id}(id=${materialId})}" href="#"><i data-lucide="download"></i> Download</a>
+        </div>
+        <div class="doc-body">
+          <h2>Chapter 2: Use Case Diagrams in Requirements Engineering</h2>
+          <p class="muted">Use case diagrams are a type of behavioral UML diagram that describe interactions between users and systems to achieve a goal.</p>
+          <div class="concept-box">
+            <div class="label">Key Concepts</div>
+            <p><strong class="text-primary">Actor:</strong> Any external entity that interacts with the system.</p>
+            <p><strong class="text-primary">Use Case:</strong> A specific functionality or task the system provides to actors.</p>
+            <p><strong class="text-primary">Include:</strong> One use case always triggers another mandatory use case.</p>
+            <p><strong class="text-primary">Extend:</strong> One use case may optionally trigger another use case.</p>
+          </div>
+          <h3>When to Use Use Case Diagrams</h3>
+          <p class="muted">Use case diagrams are most valuable during the requirements elicitation phase. They help bridge the gap between technical teams and non-technical stakeholders.</p>
+          <div class="tip-box"><strong class="text-primary"><i data-lucide="zap"></i> Example:</strong><p class="small muted">Actors: Customer, Bank Teller, External Payment Gateway. Use Cases: Login, View Balance, Transfer Funds, Generate Statement.</p></div>
+          <p class="muted">The level of detail in a use case diagram should match the audience. Always validate diagrams with actual stakeholders before finalizing requirements documentation.</p>
+        </div>
+      </article>
+    </main>
+  </section>
+
+  <aside class="chat-pane">
+    <div class="chat-head">
+      <div class="stat-icon" style="background:rgba(255,255,255,.18);color:#fff"><i data-lucide="sparkles"></i></div>
+      <div style="flex:1"><strong>AI Study Assistant</strong><div class="chat-status"><span style="display:inline-block;width:7px;height:7px;background:#4ade80;border-radius:50%"></span> Active · Topic context loaded</div></div>
+      <button class="icon-btn" style="color:rgba(255,255,255,.75)"><i data-lucide="refresh-cw"></i></button>
+    </div>
+    <div class="context-line"><i data-lucide="file-text"></i><strong>Analyzing:</strong><span class="truncate" th:text="${materialTitle ?: 'Use Case Diagrams — Lecture Slides'}">Use Case Diagrams — Lecture Slides</span></div>
+
+    <div class="messages">
+      <div class="msg" th:each="message : ${messages}" th:classappend="${message.role == 'USER' ? ' user' : ''}">
+        <div class="msg-avatar"><i data-lucide="bot" th:attr="data-lucide=${message.role == 'USER' ? 'user' : 'bot'}"></i></div>
+        <div><div class="bubble" th:text="${message.text}">Hi Alex! I am your AI Study Assistant for Software Engineering. How can I help you today?</div><div class="msg-time" th:text="${message.time}">10:02 AM</div></div>
+      </div>
+
+      <div th:if="${messages == null}">
+        <div class="msg"><div class="msg-avatar"><i data-lucide="bot"></i></div><div><div class="bubble">Hi Alex! 👋 I'm your AI Study Assistant for <strong>Software Engineering</strong>. I have read through the Requirements Engineering material you are currently studying.</div><div class="msg-time">10:02 AM</div></div></div>
+        <div class="msg user"><div class="msg-avatar"><i data-lucide="user"></i></div><div><div class="bubble">Can you explain what a Software Requirements Specification document is?</div><div class="msg-time">10:04 AM</div></div></div>
+        <div class="msg"><div class="msg-avatar"><i data-lucide="bot"></i></div><div><div class="bubble">A Software Requirements Specification is a document that describes the intended purpose, environment, and behavior of a software system. It captures functional requirements, non-functional requirements, constraints, and use cases.</div><div class="msg-time">10:04 AM</div></div></div>
+      </div>
+    </div>
+
+    <div class="quick-prompts">
+      <div class="label">Quick prompts</div>
+      <a class="chip" th:href="@{/student/ai-assistant(prompt='Generate practice quiz')}">✨ Generate Practice Quiz</a>
+      <a class="chip" th:href="@{/student/ai-assistant(prompt='Explain simply')}">💡 Explain simply</a>
+      <a class="chip" th:href="@{/student/ai-assistant(prompt='Summarize')}">📋 Summarize</a>
+    </div>
+    <form class="chat-input" th:action="@{/student/ai-assistant/send}" method="post">
+      <input type="hidden" name="materialId" th:value="${materialId}" />
+      <div class="chat-box">
+        <textarea name="message" rows="2" placeholder="Ask anything about this material..."></textarea>
+        <button class="send" type="submit"><i data-lucide="send"></i></button>
+      </div>
+    </form>
+  </aside>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script th:src="@{/js/fcms.js}" src="../static/js/fcms.js"></script>
+</body>
+</html>
