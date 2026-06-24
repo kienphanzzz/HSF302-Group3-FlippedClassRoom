@@ -71,7 +71,7 @@
           </div>
           <div class="card card-pad bg-secondary text-center">
             <div class="muted small">Accuracy</div>
-            <div class="h2 font-extrabold text-green" th:text="${(session.correctAnswers * 100) / session.totalQuestions} + '%'">80%</div>
+            <div class="h2 font-extrabold text-green" th:text="${session.totalQuestions > 0 ? (session.correctAnswers * 100) / session.totalQuestions : 0} + '%'">80%</div>
           </div>
         </div>
       </section>
@@ -130,8 +130,7 @@
       <!-- Graded Questions Display -->
       <div class="flex flex-col gap-4" th:if="${completed}">
         <article class="card card-pad" th:each="q, stat : ${questions}" 
-                 style="border-left: 6px solid;" 
-                 th:style="|border-left: 6px solid ${q.isCorrect ? 'var(--green)' : 'var(--accent)'};|">
+                 th:style="${q.isCorrect != null && q.isCorrect} ? 'border-left: 6px solid var(--green);' : 'border-left: 6px solid var(--accent);'">
           <div class="flex items-center justify-between mb-3">
             <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
             <span class="tag tag-green" th:if="${q.isCorrect}"><i data-lucide="check"></i> Correct</span>

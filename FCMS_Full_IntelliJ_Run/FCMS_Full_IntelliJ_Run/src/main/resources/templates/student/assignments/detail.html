@@ -105,18 +105,38 @@
                 </div>
                 
                 <div class="form-group mb-3">
-                  <label class="form-label" style="font-weight: 750;">File Path Placeholder (Simulated File Upload)</label>
-                  <input type="text" name="filePath" class="form-control" placeholder="e.g. uploads/srs-document.pdf"
-                         th:value="${submission != null ? submission.filePath : ''}"
-                         th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
+                  <label class="form-label" style="font-weight: 750;">Upload File Attachment</label>
+                  <input type="hidden" name="filePath" id="filePath" th:value="${submission != null ? submission.filePath : ''}" />
+                  <input type="hidden" name="originalFileName" id="originalFileName" th:value="${submission != null ? submission.originalFileName : ''}" />
+                  
+                  <input type="file" id="submissionFile" class="form-control" 
+                         th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}" />
+                  
+                  <div id="fileList" class="mt-2 flex flex-col gap-2">
+                    <div class="file-row" th:if="${submission != null and submission.originalFileName != null}">
+                      <i data-lucide="paperclip" class="text-primary"></i>
+                      <div>
+                        <div class="small" style="font-weight:750;" th:text="${submission.originalFileName}">srs-document.pdf</div>
+                        <div class="small muted">Previously uploaded attachment</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="form-group mb-3">
-                  <label class="form-label" style="font-weight: 750;">Original File Name</label>
-                  <input type="text" name="originalFileName" class="form-control" placeholder="e.g. srs-document.pdf"
-                         th:value="${submission != null ? submission.originalFileName : ''}"
-                         th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
-                </div>
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    const fileInput = document.getElementById('submissionFile');
+                    if (fileInput) {
+                      fileInput.addEventListener('change', function() {
+                        if (fileInput.files && fileInput.files.length > 0) {
+                          const file = fileInput.files[0];
+                          document.getElementById('originalFileName').value = file.name;
+                          document.getElementById('filePath').value = 'uploads/' + file.name;
+                        }
+                      });
+                    }
+                  });
+                </script>
 
                 <button type="submit" class="btn btn-primary" 
                         th:if="${submission == null or !#temporals.createNow().isAfter(assignment.deadline)}"
