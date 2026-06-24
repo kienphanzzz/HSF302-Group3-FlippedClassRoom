@@ -12,7 +12,6 @@ import java.util.Map;
 @RequestMapping("/student")
 public class StudentProgressController {
 
-    // TODO: Use logged-in user instead of demoStudentId when authentication is integrated
     private static final Long demoStudentId = 2L;
 
     private final StudentProgressService studentProgressService;

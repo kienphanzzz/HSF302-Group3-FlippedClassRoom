@@ -13,7 +13,6 @@ import java.util.Optional;
 @RequestMapping("/student")
 public class StudentLearningController {
 
-    // TODO: Use logged-in user instead of demoStudentId when authentication is integrated
     private static final Long demoStudentId = 2L;
 
     private final StudentLearningService studentLearningService;
