@@ -52,14 +52,14 @@ public class FcmsViewController {
         return "redirect:/student/learning-path";
     }
 
-    @GetMapping("/student/assignments")
-    public String studentAssignments() {
-        return "redirect:/student/assignment";
+    @GetMapping("/student/assignment")
+    public String assignmentSubmissionRedirect() {
+        return "redirect:/student/assignments";
     }
 
-    @GetMapping("/student/progress")
-    public String studentProgress() {
-        return "redirect:/student/learning-path";
+    @GetMapping("/student/ai-assistant")
+    public String aiAssistantRedirect() {
+        return "redirect:/student/ai-practice";
     }
 
     @GetMapping("/teacher/classes")
@@ -92,66 +92,6 @@ public class FcmsViewController {
         ));
 
         return "teacher-dashboard";
-    }
-
-    @GetMapping("/student/learning-path")
-    public String studentLearningPath(Model model) {
-        model.addAttribute("studentName", "Alex Nguyen");
-        model.addAttribute("course", new CourseInfo("Software Engineering", "SE2024", "Prof. Tran Phuong", "Fall 2025", 38));
-        model.addAttribute("overallProgress", "52%");
-        model.addAttribute("overallProgressValue", 52);
-        model.addAttribute("topicCount", 4);
-        model.addAttribute("materialCount", 19);
-        model.addAttribute("dueSoonCount", 2);
-
-        model.addAttribute("topics", List.of(
-                new TopicView(1L, "Topic 1: Introduction to Software Engineering", "COMPLETED", true, 5, 5, 100,
-                        List.of(
-                                new NodeView("What is Software Engineering?", "VIDEO", "12 min", null, "play-circle", "COMPLETED"),
-                                new NodeView("Lecture Slides", "MATERIAL", "PDF", null, "file-text", "COMPLETED"),
-                                new NodeView("Quick Practice", "QUIZ", "10 questions", null, "circle-help", "COMPLETED")
-                        )),
-                new TopicView(2L, "Topic 2: Requirements Engineering", "IN_PROGRESS", false, 3, 6, 50,
-                        List.of(
-                                new NodeView("Use Case Diagrams — Lecture Slides", "MATERIAL", "PDF · 10 min", null, "file-text", "COMPLETED"),
-                                new NodeView("Meet URL", "MEET_URL", "External link", null, "video", "COMPLETED"),
-                                new NodeView("SRS Assignment", "ASSIGNMENT", "Submit file", "Dec 20, 2025", "clipboard-list", "IN_PROGRESS")
-                        )),
-                new TopicView(3L, "Topic 3: Analysis Models", "LOCKED", false, 0, 4, 0,
-                        List.of(
-                                new NodeView("Activity Diagram", "MATERIAL", "PDF", null, "file-text", "LOCKED"),
-                                new NodeView("Graded Quiz", "QUIZ", "15 questions", "Dec 28, 2025", "circle-help", "LOCKED")
-                        ))
-        ));
-
-        return "student-learning-path";
-    }
-
-    @GetMapping("/student/ai-assistant")
-    public String aiAssistant(Model model) {
-        model.addAttribute("studentName", "Alex Nguyen");
-        model.addAttribute("courseCode", "SE2024");
-        model.addAttribute("materialId", 1L);
-        model.addAttribute("materialTitle", "Use Case Diagrams — Lecture Slides");
-        model.addAttribute("messages", List.of(
-                new ChatMessage("AI", "Hi Alex! I am your AI Study Assistant for Software Engineering. How can I help you today?", "10:02 AM"),
-                new ChatMessage("USER", "Generate practice questions from this material.", "10:03 AM"),
-                new ChatMessage("AI", "Sure. I can generate MCQ, true/false, or short-answer questions for self-study.", "10:04 AM")
-        ));
-        return "ai-assistant";
-    }
-
-    @GetMapping("/student/assignment")
-    public String assignmentSubmission(Model model) {
-        model.addAttribute("studentName", "Alex Nguyen");
-        model.addAttribute("course", new CourseInfo("Software Engineering", "SE2024", "Prof. Tran Phuong", "Fall 2025", 38));
-        model.addAttribute("assignment", new AssignmentView(1L, "OPEN", "Write a Software Requirements Specification Document",
-                "Dec 20, 2025 · 23:59", "10.00",
-                "Create a complete SRS document for a selected software system. Your document should include project scope, actors, functional requirements, non-functional requirements, use cases, and business rules."));
-        model.addAttribute("submissionStatus", "ON_TIME");
-        model.addAttribute("feedback", "No feedback yet. Your teacher will review your submission after it is submitted.");
-        model.addAttribute("score", "Not graded");
-        return "assignment-submission";
     }
 
     public static class ClassRoomCard {

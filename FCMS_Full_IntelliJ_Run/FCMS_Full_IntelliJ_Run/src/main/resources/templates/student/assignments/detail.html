@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Submission - FCMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../../../static/css/fcms.css" />
+</head>
+<body>
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><i data-lucide="book-open"></i></div>
+      <div>
+        <div class="brand-title">FCMS</div>
+        <div class="brand-sub">Student Portal</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a th:href="@{/student/learning-path}"><i data-lucide="book-open"></i> My Learning Path</a>
+      <a th:href="@{/student/classes}"><i data-lucide="grid"></i> Joined Classes</a>
+      <a class="active" th:href="@{/student/assignments}"><i data-lucide="clipboard-list"></i> Assignments</a>
+      <a th:href="@{/student/ai-practice}"><i data-lucide="zap"></i> AI Practice</a>
+      <a th:href="@{/student/progress}"><i data-lucide="bar-chart-2"></i> Progress Dashboard</a>
+    </nav>
+    <div class="profile-box">
+      <div class="avatar student" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
+      <div class="truncate">
+        <div class="profile-name" th:text="${studentName ?: 'Alex Nguyen'}">Alex Nguyen</div>
+        <div class="profile-role">student</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="top-title">Assignment Submission</div>
+      <div class="switcher">
+        <a th:href="@{/student/assignments}">Back to Assignments</a>
+      </div>
+      <button class="icon-btn relative"><i data-lucide="bell"></i></button>
+      <div class="avatar student" style="width:34px;height:34px" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
+    </header>
+
+    <main class="content">
+      <!-- Alerts -->
+      <div class="card card-pad mb-4 bg-green-light border-green text-green" th:if="${successMessage}" th:text="${successMessage}">
+        Success Alert
+      </div>
+      <div class="card card-pad mb-4 bg-orange-light border-orange text-accent" th:if="${errorMessage}" th:text="${errorMessage}">
+        Error Alert
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <!-- Assignment Info -->
+        <article class="card card-pad">
+          <div class="flex items-center justify-between mb-2">
+            <span class="tag tag-primary" th:text="${assignment.learningNode.classRoom.classCode}">SE2024</span>
+            <span class="tag tag-orange" th:text="'Due ' + ${#temporals.format(assignment.deadline, 'MMM dd, yyyy HH:mm')}">Due Dec 20, 2025</span>
+          </div>
+          <h1 class="h2 mb-3" th:text="${assignment.title}">Write a Software Requirements Specification Document</h1>
+          <p class="muted small mb-4" th:text="${assignment.description}">Description</p>
+          
+          <div class="grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="card card-pad bg-secondary">
+              <div class="muted small">Max Score</div>
+              <div class="h2 font-extrabold text-primary" th:text="${assignment.maxScore}">10.00</div>
+            </div>
+            <div class="card card-pad bg-secondary">
+              <div class="muted small">Late Submissions</div>
+              <div class="h2 font-extrabold" th:classappend="${assignment.allowLateSubmission ? 'text-green' : 'text-accent'}" th:text="${assignment.allowLateSubmission ? 'Allowed' : 'Not Allowed'}">Allowed</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Submit Form / Edit check -->
+        <div class="grid" style="display:grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+          <div>
+            <section class="card card-pad">
+              <h2 class="h3 mb-3">Your Submission</h2>
+              
+              <!-- Past deadline warning for resubmission -->
+              <div class="card card-pad mb-4 bg-orange-light border-orange text-accent" 
+                   th:if="${submission != null && #temporals.createNow().isAfter(assignment.deadline)}">
+                <i data-lucide="lock" style="width:16px;height:16px;vertical-align:text-bottom;"></i>
+                The deadline has passed. You cannot modify your submission.
+              </div>
+
+              <!-- Past deadline warning for new submission (if late not allowed) -->
+              <div class="card card-pad mb-4 bg-orange-light border-orange text-accent" 
+                   th:if="${submission == null && #temporals.createNow().isAfter(assignment.deadline) && !assignment.allowLateSubmission}">
+                <i data-lucide="lock" style="width:16px;height:16px;vertical-align:text-bottom;"></i>
+                The deadline has passed and late submissions are disabled.
+              </div>
+
+              <form th:action="@{/student/assignments/{id}/submit(id=${assignment.assignmentId})}" method="POST">
+                <div class="form-group mb-3">
+                  <label class="form-label" style="font-weight: 750;">Submission Text Answers</label>
+                  <textarea name="answerText" class="form-control" rows="8" placeholder="Type your answers here..." required
+                            th:text="${submission != null ? submission.answerText : ''}"
+                            th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"></textarea>
+                </div>
+                
+                <div class="form-group mb-3">
+                  <label class="form-label" style="font-weight: 750;">File Path Placeholder (Simulated File Upload)</label>
+                  <input type="text" name="filePath" class="form-control" placeholder="e.g. uploads/srs-document.pdf"
+                         th:value="${submission != null ? submission.filePath : ''}"
+                         th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
+                </div>
+
+                <div class="form-group mb-3">
+                  <label class="form-label" style="font-weight: 750;">Original File Name</label>
+                  <input type="text" name="originalFileName" class="form-control" placeholder="e.g. srs-document.pdf"
+                         th:value="${submission != null ? submission.originalFileName : ''}"
+                         th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
+                </div>
+
+                <button type="submit" class="btn btn-primary" 
+                        th:if="${submission == null or !#temporals.createNow().isAfter(assignment.deadline)}"
+                        th:text="${submission != null ? 'Update Submission' : 'Submit Assignment'}">Submit</button>
+              </form>
+            </section>
+          </div>
+
+          <!-- Submission Feedback / Grading info -->
+          <div>
+            <section class="card card-pad" th:if="${submission != null}">
+              <h2 class="h3 mb-3">Grading & Feedback</h2>
+              
+              <div class="mb-3">
+                <div class="muted small">Status</div>
+                <div>
+                  <span class="tag tag-green" th:if="${submission.submissionStatus == 'ON_TIME'}">Submitted On Time</span>
+                  <span class="tag tag-orange" th:if="${submission.submissionStatus == 'LATE'}">Submitted Late</span>
+                  <span class="tag tag-gray" th:if="${submission.submissionStatus == 'MISSING'}">Missing</span>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="muted small">Score</div>
+                <div class="h2 font-extrabold text-primary" th:text="${submission.score != null ? submission.score + ' / ' + assignment.maxScore : 'Not Graded Yet'}">Not Graded Yet</div>
+              </div>
+
+              <div class="mb-3">
+                <div class="muted small">Teacher Feedback</div>
+                <p class="small text-muted" th:text="${submission.feedback != null ? submission.feedback : 'No feedback provided yet.'}"></p>
+              </div>
+
+              <div class="mb-3" th:if="${submission.aiFeedbackSuggestion != null}">
+                <div class="muted small">AI Suggestions (Self-Study Help)</div>
+                <p class="small text-muted bg-primary-light p-2" style="border-radius: 4px;" th:text="${submission.aiFeedbackSuggestion}"></p>
+              </div>
+            </section>
+
+            <section class="card card-pad text-center muted" th:if="${submission == null}">
+              <div style="font-size: 2rem;" class="mb-2"><i data-lucide="clipboard"></i></div>
+              <p>No submission recorded yet. Use the form to submit your work before the deadline.</p>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script th:src="@{/js/fcms.js}" src="../../../static/js/fcms.js"></script>
+</body>
+</html>
