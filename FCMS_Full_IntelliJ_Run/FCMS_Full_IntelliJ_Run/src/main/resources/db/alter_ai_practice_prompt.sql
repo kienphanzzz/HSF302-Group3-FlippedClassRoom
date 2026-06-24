@@ -38,7 +38,16 @@ BEGIN
 END
 
 -- Make content_id nullable in practice_sessions
-ALTER TABLE practice_sessions ALTER COLUMN content_id BIGINT NULL;
+IF EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID('practice_sessions')
+      AND name = 'content_id'
+      AND is_nullable = 0
+)
+BEGIN
+    ALTER TABLE practice_sessions ALTER COLUMN content_id BIGINT NULL;
+END
 
 -- Add options for MCQ in practice_questions table
 IF COL_LENGTH('practice_questions', 'option_a') IS NULL

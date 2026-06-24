@@ -51,4 +51,26 @@ public class PracticeQuestion {
 
     @Column(name = "is_correct")
     private Boolean isCorrect;
+
+    @Column(name = "answered_at")
+    private java.time.LocalDateTime answeredAt;
+
+    @Column(name = "revealed")
+    private Boolean revealed;
+
+    @Transient
+    @Builder.Default
+    private java.util.List<PracticeQuestionChat> chats = new java.util.ArrayList<>();
+
+    @Transient
+    public String getStatusClass() {
+        if (Boolean.TRUE.equals(isCorrect)) {
+            return "question-correct";
+        } else if (Boolean.FALSE.equals(isCorrect)) {
+            return "question-wrong";
+        } else if (Boolean.TRUE.equals(revealed)) {
+            return "question-revealed";
+        }
+        return "";
+    }
 }

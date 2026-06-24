@@ -327,9 +327,10 @@
 
               <!-- Upload File pane -->
               <div class="source-pane" id="paneFile" style="display: none;">
-                <label class="label small mb-1">Choose PDF, Word (.docx), or TXT Lesson File</label>
-                <input type="file" name="uploadedFile" class="composer-input-num" accept=".txt,.pdf,.docx" id="fileInput" />
-                <span class="muted small mt-1" style="display:block;">Acceptable extensions: .txt, .pdf, .docx (max 50MB)</span>
+                <label class="label small mb-1" for="fileInput">Choose TXT, PDF, Word, PowerPoint, ZIP, or image lesson file</label>
+                <input type="file" name="uploadedFile" class="composer-input-num" accept=".txt,.pdf,.docx,.pptx,.zip,.png,.jpg,.jpeg" id="fileInput" />
+                <span class="muted small mt-1" style="display:block;">Acceptable extensions: .txt, .pdf, .docx, .pptx, .zip, .png, .jpg, .jpeg (max 50MB)</span>
+                <span class="muted small mt-1" style="display:block; font-weight: 500; color: #475569;">ZIP files are supported if they contain TXT, PDF, DOCX, or PPTX files. Images are supported for upload, but OCR/text recognition is limited in demo mode.</span>
               </div>
 
               <!-- Paste Text pane -->

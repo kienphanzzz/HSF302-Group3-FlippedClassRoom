@@ -67,6 +67,10 @@ public class PracticeSession {
     @Column(name = "correct_answers", nullable = false)
     private Integer correctAnswers = 0;
 
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 50)
+    private String status = "GENERATED";
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

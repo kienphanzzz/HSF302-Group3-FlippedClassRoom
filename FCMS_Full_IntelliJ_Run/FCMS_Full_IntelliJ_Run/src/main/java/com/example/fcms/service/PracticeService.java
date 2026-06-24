@@ -24,6 +24,7 @@ public class PracticeService {
     private final UserRepository userRepository;
     private final LearningNodeRepository learningNodeRepository;
     private final FileTextExtractionService fileTextExtractionService;
+    private final PracticeQuestionChatRepository practiceQuestionChatRepository;
 
     public PracticeService(PracticeSessionRepository practiceSessionRepository,
                            PracticeQuestionRepository practiceQuestionRepository,
@@ -32,7 +33,8 @@ public class PracticeService {
                            LearningProgressLogRepository learningProgressLogRepository,
                            UserRepository userRepository,
                            LearningNodeRepository learningNodeRepository,
-                           FileTextExtractionService fileTextExtractionService) {
+                           FileTextExtractionService fileTextExtractionService,
+                           PracticeQuestionChatRepository practiceQuestionChatRepository) {
         this.practiceSessionRepository = practiceSessionRepository;
         this.practiceQuestionRepository = practiceQuestionRepository;
         this.contentResourceRepository = contentResourceRepository;
@@ -41,6 +43,7 @@ public class PracticeService {
         this.userRepository = userRepository;
         this.learningNodeRepository = learningNodeRepository;
         this.fileTextExtractionService = fileTextExtractionService;
+        this.practiceQuestionChatRepository = practiceQuestionChatRepository;
     }
 
     private boolean isStudentEnrolledInContentClass(Long studentId, ContentResource resource) {
@@ -122,6 +125,8 @@ public class PracticeService {
 
                 java.nio.file.Files.copy(uploadedFile.getInputStream(), targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 uploadedFilePath = targetPath.toAbsolutePath().toString().replace("\\", "/");
+            } catch (IllegalArgumentException e) {
+                throw e;
             } catch (Exception e) {
                 throw new IllegalArgumentException("Could not save uploaded file. Please try again or paste the lesson text instead.", e);
             }
@@ -493,7 +498,10 @@ public class PracticeService {
         PracticeSession session = practiceSessionRepository.findByPracticeSessionIdAndStudent_UserId(sessionId, studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Practice session not found or access denied."));
 
-        // Delete questions first
+        // Delete chats first
+        practiceQuestionChatRepository.deleteByPracticeSession_PracticeSessionId(sessionId);
+
+        // Delete questions next
         practiceQuestionRepository.deleteByPracticeSession_PracticeSessionId(sessionId);
 
         // Delete uploaded file if exists
@@ -513,6 +521,9 @@ public class PracticeService {
     public void clearHistory(Long studentId) {
         List<PracticeSession> sessions = practiceSessionRepository.findByStudent_UserIdOrderByCreatedAtDesc(studentId);
         for (PracticeSession session : sessions) {
+            // Delete chats
+            practiceQuestionChatRepository.deleteByPracticeSession_PracticeSessionId(session.getPracticeSessionId());
+
             // Delete questions
             practiceQuestionRepository.deleteByPracticeSession_PracticeSessionId(session.getPracticeSessionId());
 
@@ -528,6 +539,135 @@ public class PracticeService {
             // Delete session
             practiceSessionRepository.delete(session);
         }
+    }
+
+    @Transactional
+    public PracticeQuestion answerQuestion(Long sessionId, Long questionId, Long studentId, String studentAnswer) {
+        PracticeSession session = getSession(studentId, sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found or access denied."));
+
+        PracticeQuestion question = practiceQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Question not found."));
+
+        if (!question.getPracticeSession().getPracticeSessionId().equals(sessionId)) {
+            throw new IllegalArgumentException("Question does not belong to this session.");
+        }
+
+        String ans = studentAnswer != null ? studentAnswer.trim() : "";
+        question.setStudentAnswer(ans);
+
+        boolean correct = false;
+        if ("MCQ".equalsIgnoreCase(question.getQuestionType())) {
+            correct = question.getCorrectAnswer().trim().equalsIgnoreCase(ans);
+        } else if ("TRUE_FALSE".equalsIgnoreCase(question.getQuestionType())) {
+            correct = question.getCorrectAnswer().trim().equalsIgnoreCase(ans);
+        } else { // SHORT_ANSWER
+            correct = !ans.isEmpty() && ans.length() >= 5;
+        }
+
+        question.setIsCorrect(correct);
+        question.setAnsweredAt(java.time.LocalDateTime.now());
+        practiceQuestionRepository.save(question);
+
+        // Update status to IN_PROGRESS if it was GENERATED
+        if ("GENERATED".equalsIgnoreCase(session.getStatus())) {
+            session.setStatus("IN_PROGRESS");
+        }
+
+        // Recalculate session correct count
+        List<PracticeQuestion> questions = getQuestionsForSession(sessionId);
+        long correctCount = questions.stream()
+                .filter(q -> Boolean.TRUE.equals(q.getIsCorrect()))
+                .count();
+        session.setCorrectAnswers((int) correctCount);
+        practiceSessionRepository.save(session);
+
+        return question;
+    }
+
+    @Transactional
+    public PracticeQuestion revealQuestion(Long sessionId, Long questionId, Long studentId) {
+        PracticeSession session = getSession(studentId, sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found or access denied."));
+
+        PracticeQuestion question = practiceQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Question not found."));
+
+        if (!question.getPracticeSession().getPracticeSessionId().equals(sessionId)) {
+            throw new IllegalArgumentException("Question does not belong to this session.");
+        }
+
+        question.setRevealed(true);
+        if (question.getAnsweredAt() == null) {
+            question.setAnsweredAt(java.time.LocalDateTime.now());
+        }
+        practiceQuestionRepository.save(question);
+
+        // Update status to IN_PROGRESS if it was GENERATED
+        if ("GENERATED".equalsIgnoreCase(session.getStatus())) {
+            session.setStatus("IN_PROGRESS");
+            practiceSessionRepository.save(session);
+        }
+
+        return question;
+    }
+
+    @Transactional
+    public PracticeQuestionChat askAboutQuestion(Long sessionId, Long questionId, Long studentId, String followUpPrompt) {
+        PracticeSession session = getSession(studentId, sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found or access denied."));
+
+        PracticeQuestion question = practiceQuestionRepository.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Question not found."));
+
+        if (!question.getPracticeSession().getPracticeSessionId().equals(sessionId)) {
+            throw new IllegalArgumentException("Question does not belong to this session.");
+        }
+
+        String cleanPrompt = followUpPrompt != null ? followUpPrompt.toLowerCase() : "";
+        String aiResponse;
+        if (cleanPrompt.contains("why") || cleanPrompt.contains("tại sao") || cleanPrompt.contains("correct") || cleanPrompt.contains("đúng")) {
+            aiResponse = "Based on the lesson material and the question context, the correct answer is indeed '" + question.getCorrectAnswer() + "'. Let me expand on the explanation: " + question.getExplanation() + " This is the most accurate choice because it directly aligns with the definitions and concepts described in " + (session.getSourceTitle() != null ? session.getSourceTitle() : "the study material") + ".";
+        } else if (cleanPrompt.contains("formula") || cleanPrompt.contains("công thức") || cleanPrompt.contains("math") || cleanPrompt.contains("step")) {
+            aiResponse = "Here is a step-by-step breakdown of the concepts and any underlying formulas for this question:\n" +
+                    "1. Identify the input variables from the question content: '" + question.getQuestionContent() + "'\n" +
+                    "2. Apply the relevant standard definitions or formulas related to " + (session.getSourceTitle() != null ? session.getSourceTitle() : "this topic") + ".\n" +
+                    "3. Calculate/evaluate: The correct choice is '" + question.getCorrectAnswer() + "' because the step-by-step logic yields this result.\n" +
+                    "Let me know if you need more details on any specific step!";
+        } else if (cleanPrompt.contains("explain") || cleanPrompt.contains("giải thích") || cleanPrompt.contains("clear") || cleanPrompt.contains("rõ")) {
+            aiResponse = "Sure, let's explain this question in more detail. The question asks: '" + question.getQuestionContent() + "'.\n" +
+                    "The correct option is: " + question.getCorrectAnswer() + ".\n" +
+                    "Here is the detailed breakdown: " + question.getExplanation();
+        } else {
+            aiResponse = "This AI Practice assistant focuses on the current lesson/question. Full general chat will be integrated later.";
+        }
+
+        PracticeQuestionChat chat = PracticeQuestionChat.builder()
+                .practiceQuestion(question)
+                .practiceSession(session)
+                .student(session.getStudent())
+                .userMessage(followUpPrompt)
+                .aiResponse(aiResponse)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+
+        return practiceQuestionChatRepository.save(chat);
+    }
+
+    public List<PracticeQuestionChat> getQuestionChats(Long questionId) {
+        return practiceQuestionChatRepository.findByPracticeQuestion_PracticeQuestionIdOrderByCreatedAtAsc(questionId);
+    }
+
+    public List<PracticeQuestionChat> getChatsForSession(Long sessionId) {
+        return practiceQuestionChatRepository.findByPracticeSession_PracticeSessionIdOrderByCreatedAtAsc(sessionId);
+    }
+
+    @Transactional
+    public PracticeSession finishSession(Long sessionId, Long studentId) {
+        PracticeSession session = getSession(studentId, sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found or access denied."));
+        session.setStatus("COMPLETED");
+        return practiceSessionRepository.save(session);
     }
 
     private String getFileExtension(String fileName) {
