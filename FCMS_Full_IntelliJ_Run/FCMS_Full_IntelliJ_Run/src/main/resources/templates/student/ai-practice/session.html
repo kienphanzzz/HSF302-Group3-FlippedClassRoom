@@ -8,6 +8,97 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../../../static/css/fcms.css" />
+  <style>
+    .chat-layout {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .chat-bubble-assistant {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(15, 23, 36, 0.02);
+      flex: 1;
+    }
+    .question-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      background: #fdfdfd;
+      transition: all 0.2s ease;
+    }
+    .question-card:hover {
+      box-shadow: 0 4px 12px rgba(15,23,36,0.03);
+    }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 13.5px;
+    }
+    .option-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--secondary);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .banner-settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .setting-tag {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 750;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .graded-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .graded-badge.correct {
+      background: #e6f4ea;
+      color: var(--green);
+    }
+    .graded-badge.incorrect {
+      background: #fdf2f2;
+      color: var(--red);
+    }
+  </style>
 </head>
 <body>
 <div class="page">
@@ -48,167 +139,177 @@
 
     <main class="content">
       <!-- Warnings Alert -->
-      <div class="card card-pad mb-4 bg-orange-light border-orange text-accent flex items-start gap-3">
-        <i data-lucide="alert-triangle" style="width:24px;height:24px;flex-shrink:0;"></i>
+      <div class="card card-pad mb-4 bg-orange-light border-orange text-accent flex items-start gap-3" style="max-width: 720px; margin: 0 auto 1.5rem;">
+        <i data-lucide="alert-triangle" style="width:22px;height:22px;flex-shrink:0;"></i>
         <div>
           <strong style="display:block;" class="mb-1">Self-Study Warning</strong>
           <span class="small font-bold">AI practice is for self-study only and does not affect official grades.</span>
         </div>
       </div>
 
-      <!-- Session Title / Results Summary (Completed) -->
-      <section class="card card-pad mb-4" th:if="${completed}">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <span class="tag tag-green">COMPLETED</span>
-            <span class="tag tag-primary" th:text="${session.sourceType}">UPLOADED_FILE</span>
-          </div>
-          <span class="text-accent font-bold" th:text="${session.difficulty} + ' · ' + ${session.questionType}">MEDIUM · MCQ</span>
-        </div>
-        <h1 class="h2 mb-2" th:text="'Results for: ' + ${session.sourceTitle}">Use Case Diagrams — Lecture Slides</h1>
+      <!-- ChatGPT-style Conversational Chat Layout -->
+      <div class="chat-layout">
         
-        <div class="grid mt-3 mb-3" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-          <div class="card card-pad bg-secondary text-center">
-            <div class="muted small">Practice Score</div>
-            <div class="h2 font-extrabold text-primary" th:text="${session.correctAnswers} + ' / ' + ${session.totalQuestions}">4 / 5</div>
-          </div>
-          <div class="card card-pad bg-secondary text-center">
-            <div class="muted small">Accuracy</div>
-            <div class="h2 font-extrabold text-green" th:text="${session.totalQuestions > 0 ? (session.correctAnswers * 100) / session.totalQuestions : 0} + '%'">80%</div>
-          </div>
-        </div>
-
-        <div th:if="${session.customPrompt != null && !session.customPrompt.trim().isEmpty()}" style="background: var(--primary-light); padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--primary); margin-top: 1rem;">
-          <div class="small text-primary font-bold">Custom Prompt Applied:</div>
-          <p class="small text-muted mb-0" th:text="${session.customPrompt}">Prompt content...</p>
-        </div>
-      </section>
-
-      <!-- Session Title / Info (In Progress) -->
-      <section class="card card-pad mb-4" th:if="${!completed}">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <span class="tag tag-primary">IN PROGRESS</span>
-            <span class="tag tag-purple" th:text="${session.sourceType}">UPLOADED_FILE</span>
-          </div>
-          <span class="text-accent font-bold" th:text="${session.difficulty} + ' · ' + ${session.questionType}">MEDIUM · MCQ</span>
-        </div>
-        <h1 class="h2 mb-2" th:text="'Practice on: ' + ${session.sourceTitle}">Use Case Diagrams — Lecture Slides</h1>
-        <p class="muted small">Review the questions and submit your answers below to verify your understanding.</p>
-
-        <div th:if="${session.customPrompt != null && !session.customPrompt.trim().isEmpty()}" style="background: var(--primary-light); padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--primary); margin-top: 1rem;">
-          <div class="small text-primary font-bold">Custom Prompt Applied:</div>
-          <p class="small text-muted mb-0" th:text="${session.customPrompt}">Prompt content...</p>
-        </div>
-      </section>
-
-      <!-- Active Answering Form -->
-      <form th:action="@{/student/ai-practice/{id}/submit(id=${session.practiceSessionId})}" method="POST" th:if="${!completed}">
-        <div class="flex flex-col gap-4">
-          <article class="card card-pad" th:each="q, stat : ${questions}">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
-              <span class="small muted" th:text="${q.questionType}">MCQ</span>
-            </div>
+        <!-- 1. User Prompt Chat Bubble (Right Aligned) -->
+        <div class="msg user">
+          <div class="msg-avatar">U</div>
+          <div class="bubble">
+            <div class="small muted mb-1" style="color: rgba(255, 255, 255, 0.7); font-weight: 700;">Instructions Submitted:</div>
             
-            <p style="font-weight: 750; white-space: pre-line;" th:text="${q.questionContent}">What is the main idea?</p>
+            <p class="mb-0" style="font-weight: 600;" th:if="${session.customPrompt != null && !session.customPrompt.trim().isEmpty()}" th:text="${session.customPrompt}"></p>
             
-            <!-- MCQ Options list -->
-            <div class="mt-3 mb-3 flex flex-col gap-2" th:if="${q.questionType == 'MCQ'}">
-              <div class="flex items-start gap-2">
-                <strong>A)</strong> <span th:text="${q.optionA}">Option A text</span>
-              </div>
-              <div class="flex items-start gap-2">
-                <strong>B)</strong> <span th:text="${q.optionB}">Option B text</span>
-              </div>
-              <div class="flex items-start gap-2">
-                <strong>C)</strong> <span th:text="${q.optionC}">Option C text</span>
-              </div>
-              <div class="flex items-start gap-2">
-                <strong>D)</strong> <span th:text="${q.optionD}">Option D text</span>
-              </div>
-            </div>
-
-            <!-- Answer inputs based on type -->
-            <div class="form-group mt-3" style="max-width: 480px;">
-              <label class="form-label small font-bold">Your Answer</label>
-              
-              <!-- MCQ Select -->
-              <select th:name="'question_' + ${q.practiceQuestionId}" class="form-control" required th:if="${q.questionType == 'MCQ'}">
-                <option value="">-- Select Answer --</option>
-                <option value="A" th:text="'A: ' + ${q.optionA}">A</option>
-                <option value="B" th:text="'B: ' + ${q.optionB}">B</option>
-                <option value="C" th:text="'C: ' + ${q.optionC}">C</option>
-                <option value="D" th:text="'D: ' + ${q.optionD}">D</option>
-              </select>
-
-              <!-- TRUE/FALSE Select -->
-              <select th:name="'question_' + ${q.practiceQuestionId}" class="form-control" required th:if="${q.questionType == 'TRUE_FALSE'}">
-                <option value="">-- Select Answer --</option>
-                <option value="A">True</option>
-                <option value="B">False</option>
-              </select>
-
-              <!-- SHORT_ANSWER input -->
-              <textarea th:name="'question_' + ${q.practiceQuestionId}" class="form-control" rows="3" placeholder="Type your answer here (minimum 5 characters)..." required th:if="${q.questionType == 'SHORT_ANSWER'}"></textarea>
-            </div>
-          </article>
+            <p class="mb-0" style="font-weight: 600;" th:if="${session.customPrompt == null || session.customPrompt.trim().isEmpty()}"
+               th:text="'Generate ' + ${session.totalQuestions} + ' ' + ${session.questionType} + ' practice questions based on material: ' + ${session.sourceTitle} + '.'"></p>
+          </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mt-4 w-full flex items-center justify-center gap-2">
-          <i data-lucide="check-square"></i> Submit Answers & Check Results
-        </button>
-      </form>
+        <!-- 2. AI Assistant response bubble (Left Aligned) -->
+        <div class="msg">
+          <div class="msg-avatar" style="background: var(--purple); color: white;"><i data-lucide="cpu" style="width: 17px; height: 17px;"></i></div>
+          <div class="chat-bubble-assistant">
+            
+            <!-- Summary card when session is completed -->
+            <div class="mb-4 bg-primary-light p-3" style="border-radius: 12px;" th:if="${completed}">
+              <h3 class="font-bold small mb-2 text-primary" style="display:flex; align-items:center; gap:5px;">
+                <i data-lucide="award"></i> Results summary
+              </h3>
+              <div class="flex items-center justify-between">
+                <span class="small">Score: <strong th:text="${session.correctAnswers} + ' / ' + ${session.totalQuestions}">4 / 5</strong></span>
+                <span class="small">Accuracy: <strong class="text-green" th:text="${session.totalQuestions > 0 ? (session.correctAnswers * 100) / session.totalQuestions : 0} + '%'">80%</strong></span>
+              </div>
+            </div>
 
-      <!-- Graded Questions Display (Completed) -->
-      <div class="flex flex-col gap-4" th:if="${completed}">
-        <article class="card card-pad" th:each="q, stat : ${questions}" 
-                 th:style="${q.isCorrect != null && q.isCorrect} ? 'border-left: 6px solid var(--green);' : 'border-left: 6px solid var(--accent);'">
-          <div class="flex items-center justify-between mb-3">
-            <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
-            <span class="tag tag-green" th:if="${q.isCorrect}"><i data-lucide="check"></i> Correct</span>
-            <span class="tag tag-orange" th:if="${!q.isCorrect}"><i data-lucide="x"></i> Incorrect</span>
-          </div>
-          
-          <p style="font-weight: 750; white-space: pre-line;" th:text="${q.questionContent}">Question content...</p>
-          
-          <!-- MCQ Options list -->
-          <div class="mt-3 mb-3 flex flex-col gap-2" th:if="${q.questionType == 'MCQ'}">
-            <div class="flex items-start gap-2">
-              <strong>A)</strong> <span th:text="${q.optionA}">Option A text</span>
+            <!-- Material Details Header -->
+            <div class="banner-settings">
+              <span class="setting-tag"><i data-lucide="file-text" style="width:11px;height:11px"></i> <span th:text="${session.sourceTitle}">Use Case</span></span>
+              <span class="setting-tag"><i data-lucide="tag" style="width:11px;height:11px"></i> <span th:text="${session.sourceType}">UPLOADED_FILE</span></span>
+              <span class="setting-tag"><i data-lucide="bar-chart" style="width:11px;height:11px"></i> <span th:text="${session.difficulty}">MEDIUM</span></span>
+              <span class="setting-tag"><i data-lucide="help-circle" style="width:11px;height:11px"></i> <span th:text="${session.questionType}">MCQ</span></span>
             </div>
-            <div class="flex items-start gap-2">
-              <strong>B)</strong> <span th:text="${q.optionB}">Option B text</span>
-            </div>
-            <div class="flex items-start gap-2">
-              <strong>C)</strong> <span th:text="${q.optionC}">Option C text</span>
-            </div>
-            <div class="flex items-start gap-2">
-              <strong>D)</strong> <span th:text="${q.optionD}">Option D text</span>
-            </div>
-          </div>
 
-          <div class="grid mt-3 bg-secondary p-3" style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; border-radius:4px;">
-            <div>
-              <div class="small muted">Your Answer</div>
-              <strong th:text="${q.questionType == 'TRUE_FALSE' ? (q.studentAnswer == 'A' ? 'True' : 'False') : q.studentAnswer}">A</strong>
-            </div>
-            <div>
-              <div class="small muted">Correct Answer</div>
-              <strong class="text-green" th:text="${q.questionType == 'TRUE_FALSE' ? (q.correctAnswer == 'A' ? 'True' : 'False') : q.correctAnswer}">A</strong>
-            </div>
-          </div>
+            <h2 class="h2 mb-3" style="font-size: 17px; font-weight: 800; color: var(--primary);">Practice Questions</h2>
+            
+            <!-- Questions Form (In Progress) -->
+            <form th:action="@{/student/ai-practice/{id}/submit(id=${session.practiceSessionId})}" method="POST" th:if="${!completed}">
+              <div class="flex flex-col gap-3">
+                <div class="question-card" th:each="q, stat : ${questions}">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
+                    <span class="small muted" th:text="${q.questionType}">MCQ</span>
+                  </div>
+                  
+                  <p class="mb-3" style="font-weight: 750; white-space: pre-line; line-height: 1.5;" th:text="${q.questionContent}">What is the main idea?</p>
+                  
+                  <!-- MCQ Options View -->
+                  <div class="options-grid" th:if="${q.questionType == 'MCQ'}">
+                    <div class="option-item">
+                      <span class="option-badge">A</span> <span th:text="${q.optionA}">Option A text</span>
+                    </div>
+                    <div class="option-item">
+                      <span class="option-badge">B</span> <span th:text="${q.optionB}">Option B text</span>
+                    </div>
+                    <div class="option-item">
+                      <span class="option-badge">C</span> <span th:text="${q.optionC}">Option C text</span>
+                    </div>
+                    <div class="option-item">
+                      <span class="option-badge">D</span> <span th:text="${q.optionD}">Option D text</span>
+                    </div>
+                  </div>
 
-          <div class="mt-3 bg-primary-light p-3" style="border-radius:4px;">
-            <div class="small text-primary font-bold">Explanation</div>
-            <p class="small text-muted mb-0" th:text="${q.explanation}">Explanation content...</p>
+                  <!-- Inputs -->
+                  <div class="form-group mt-2" style="max-width: 100%;">
+                    <label class="label small">Your Selection</label>
+                    
+                    <!-- MCQ select -->
+                    <select th:name="'question_' + ${q.practiceQuestionId}" class="composer-select" required th:if="${q.questionType == 'MCQ'}">
+                      <option value="">-- Choose Answer --</option>
+                      <option value="A" th:text="'A: ' + ${q.optionA}">A</option>
+                      <option value="B" th:text="'B: ' + ${q.optionB}">B</option>
+                      <option value="C" th:text="'C: ' + ${q.optionC}">C</option>
+                      <option value="D" th:text="'D: ' + ${q.optionD}">D</option>
+                    </select>
+
+                    <!-- TRUE_FALSE select -->
+                    <select th:name="'question_' + ${q.practiceQuestionId}" class="composer-select" required th:if="${q.questionType == 'TRUE_FALSE'}">
+                      <option value="">-- Choose Answer --</option>
+                      <option value="TRUE">True</option>
+                      <option value="FALSE">False</option>
+                    </select>
+
+                    <!-- SHORT_ANSWER textarea -->
+                    <textarea th:name="'question_' + ${q.practiceQuestionId}" class="composer-textarea" rows="2" style="border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fafafa;" placeholder="Type answer here (min 5 characters)..." required th:if="${q.questionType == 'SHORT_ANSWER'}"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="generate-sparkle-btn mt-3" style="box-shadow: 0 6px 15px rgba(26, 115, 232, 0.16);">
+                <i data-lucide="check-square" style="width:16px;height:16px;"></i> Submit & Grade Answers
+              </button>
+            </form>
+
+            <!-- Results Display (Completed) -->
+            <div class="flex flex-col gap-3" th:if="${completed}">
+              <div class="question-card" th:each="q, stat : ${questions}"
+                   th:style="${q.isCorrect != null && q.isCorrect} ? 'border-left: 6px solid var(--green);' : 'border-left: 6px solid var(--accent);'">
+                
+                <div class="flex items-center justify-between mb-2">
+                  <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
+                  <span class="graded-badge correct" th:if="${q.isCorrect}"><i data-lucide="check" style="width:13px;height:13px;"></i> Correct</span>
+                  <span class="graded-badge incorrect" th:if="${!q.isCorrect}"><i data-lucide="x" style="width:13px;height:13px;"></i> Incorrect</span>
+                </div>
+
+                <p class="mb-3" style="font-weight: 750; white-space: pre-line; line-height: 1.5;" th:text="${q.questionContent}">Question Content...</p>
+
+                <!-- MCQ Options View -->
+                <div class="options-grid" th:if="${q.questionType == 'MCQ'}">
+                  <div class="option-item" th:style="${q.correctAnswer == 'A'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
+                    <span class="option-badge" th:style="${q.correctAnswer == 'A'} ? 'background:var(--green); color:#fff;' : ''">A</span> <span th:text="${q.optionA}">Option A text</span>
+                  </div>
+                  <div class="option-item" th:style="${q.correctAnswer == 'B'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
+                    <span class="option-badge" th:style="${q.correctAnswer == 'B'} ? 'background:var(--green); color:#fff;' : ''">B</span> <span th:text="${q.optionB}">Option B text</span>
+                  </div>
+                  <div class="option-item" th:style="${q.correctAnswer == 'C'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
+                    <span class="option-badge" th:style="${q.correctAnswer == 'C'} ? 'background:var(--green); color:#fff;' : ''">C</span> <span th:text="${q.optionC}">Option C text</span>
+                  </div>
+                  <div class="option-item" th:style="${q.correctAnswer == 'D'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
+                    <span class="option-badge" th:style="${q.correctAnswer == 'D'} ? 'background:var(--green); color:#fff;' : ''">D</span> <span th:text="${q.optionD}">Option D text</span>
+                  </div>
+                </div>
+
+                <!-- Answer matching display -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg); padding: 10px; border-radius: 8px;" class="mb-3">
+                  <div class="small">
+                    <span class="muted block">Your Answer:</span>
+                    <strong th:text="${q.studentAnswer}">A</strong>
+                  </div>
+                  <div class="small">
+                    <span class="muted block">Correct Answer:</span>
+                    <strong class="text-green" th:text="${q.correctAnswer}">A</strong>
+                  </div>
+                </div>
+
+                <!-- Explanation -->
+                <div class="p-3" style="background: rgba(26, 115, 232, 0.05); border-radius: 8px;">
+                  <span class="small font-bold text-primary block mb-1">AI Explanation:</span>
+                  <p class="small mb-0" style="line-height: 1.5; color:#475569;" th:text="${q.explanation}">Explanation content...</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer navigation options -->
+            <div class="flex items-center gap-3 mt-4" style="border-top:1px solid var(--border); padding-top: 16px;">
+              <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm flex-1"><i data-lucide="zap" style="width: 14px; height: 14px;"></i> Generate New Practice</a>
+              <a th:href="@{/student/ai-practice/history}" class="btn btn-outline btn-sm"><i data-lucide="history" style="width: 14px; height: 14px;"></i> View History</a>
+            </div>
+
           </div>
-        </article>
+        </div>
+
       </div>
-
     </main>
   </div>
 </div>
+
 <script src="https://unpkg.com/lucide@latest"></script>
 <script th:src="@{/js/fcms.js}" src="../../../static/js/fcms.js"></script>
 </body>

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
@@ -42,17 +43,17 @@ public class StudentPracticeController {
 
     @PostMapping("/ai-practice/generate")
     public String generatePractice(
-            @RequestParam(required = false) Long contentId,
-            @RequestParam(required = false) MultipartFile uploadedFile,
-            @RequestParam(required = false) String pastedText,
-            @RequestParam(required = false) String sourceUrl,
-            @RequestParam(required = false) String customPrompt,
-            @RequestParam(required = false, defaultValue = "MEDIUM") String difficulty,
-            @RequestParam(required = false, defaultValue = "MCQ") String questionType,
-            @RequestParam(required = false, defaultValue = "5") Integer numberOfQuestions,
+            @RequestParam(value = "contentId", required = false) Long contentId,
+            @RequestParam(value = "uploadedFile", required = false) MultipartFile uploadedFile,
+            @RequestParam(value = "pastedText", required = false) String pastedText,
+            @RequestParam(value = "sourceUrl", required = false) String sourceUrl,
+            @RequestParam(value = "customPrompt", required = false) String customPrompt,
+            @RequestParam(value = "difficulty", required = false) String difficulty,
+            @RequestParam(value = "questionType", required = false) String questionType,
+            @RequestParam(value = "numberOfQuestions", required = false) Integer numberOfQuestions,
             RedirectAttributes redirectAttributes) {
         try {
-            // Basic source validation
+            // Validation: Request is valid if at least one of these exists
             boolean hasSource = (contentId != null)
                     || (uploadedFile != null && !uploadedFile.isEmpty())
                     || (pastedText != null && !pastedText.trim().isEmpty())
@@ -61,13 +62,6 @@ public class StudentPracticeController {
 
             if (!hasSource) {
                 throw new IllegalArgumentException("Please provide at least one study material source (file, text, URL, selected content) or custom prompt instructions.");
-            }
-
-            if (numberOfQuestions == null) {
-                numberOfQuestions = 5;
-            }
-            if (numberOfQuestions < 1 || numberOfQuestions > 10) {
-                throw new IllegalArgumentException("Number of questions must be between 1 and 10.");
             }
 
             PracticeSession session = practiceService.generatePracticeSession(
@@ -138,5 +132,11 @@ public class StudentPracticeController {
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("history", history);
         return "student/ai-practice/history";
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public String handleMaxSizeException(RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("errorMessage", "Uploaded file is too large. Please upload a file under 50MB or paste the lesson text instead.");
+        return "redirect:/student/ai-practice";
     }
 }

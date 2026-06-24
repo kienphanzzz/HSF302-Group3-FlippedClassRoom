@@ -8,6 +8,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../../../static/css/fcms.css" />
+  <style>
+    .setting-tag {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 10px;
+      font-weight: 750;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
 </head>
 <body>
 <div class="page">
@@ -48,75 +61,64 @@
 
     <main class="content">
       <!-- Warnings Alert -->
-      <div class="card card-pad mb-4 bg-orange-light border-orange text-accent flex items-start gap-3">
-        <i data-lucide="alert-triangle" style="width:24px;height:24px;flex-shrink:0;"></i>
+      <div class="card card-pad mb-4 bg-orange-light border-orange text-accent flex items-start gap-3" style="max-width: 760px; margin: 0 auto 1.5rem;">
+        <i data-lucide="alert-triangle" style="width:22px;height:22px;flex-shrink:0;"></i>
         <div>
           <strong style="display:block;" class="mb-1">Self-Study Warning</strong>
           <span class="small font-bold">AI practice is for self-study only and does not affect official grades.</span>
         </div>
       </div>
 
-      <section class="mb-4">
+      <section class="mb-4" style="max-width: 760px; margin: 0 auto 1.5rem;">
         <h1 class="h2 mb-2">My Practice Sessions</h1>
         <p class="muted">Check your accuracy results and review past questions and detailed explanations.</p>
       </section>
 
-      <!-- History Table -->
-      <div class="card">
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Source Material</th>
-                <th>Source Type</th>
-                <th>Difficulty</th>
-                <th>Question Type</th>
-                <th>Date Generated</th>
-                <th>Accuracy Score</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Loop Sessions -->
-              <tr th:each="session : ${history}">
-                <td>
-                  <div style="font-weight: 750;" th:text="${session.sourceTitle}">Use Case Diagrams — Lecture Slides</div>
-                  <div class="small muted" th:text="${session.content != null ? session.content.learningNode.classRoom.className : 'Custom AI Resource'}">Software Engineering</div>
-                </td>
-                <td>
-                  <span class="tag tag-purple" th:text="${session.sourceType}">UPLOADED_FILE</span>
-                </td>
-                <td>
-                  <span class="tag tag-primary" th:text="${session.difficulty}">MEDIUM</span>
-                </td>
-                <td>
-                  <span class="tag tag-purple" th:text="${session.questionType}">MCQ</span>
-                </td>
-                <td th:text="${#temporals.format(session.createdAt, 'MMM dd, yyyy HH:mm')}">Dec 18, 2025</td>
-                <td>
-                  <strong class="text-green" th:text="${session.correctAnswers} + ' / ' + ${session.totalQuestions}">4 / 5</strong>
-                </td>
-                <td>
-                  <a th:href="@{/student/ai-practice/{id}(id=${session.practiceSessionId})}" class="btn btn-soft btn-sm flex items-center gap-1">
-                    Review Details <i data-lucide="arrow-right" style="width:14px;height:14px"></i>
-                  </a>
-                </td>
-              </tr>
+      <!-- Logs cards grid -->
+      <div class="flex flex-col gap-3" style="max-width: 760px; margin: 0 auto;">
+        
+        <!-- Loop Sessions -->
+        <article class="card card-pad flex items-center justify-between gap-4" th:each="session : ${history}" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 16px;">
+          <div class="flex items-start gap-3" style="flex: 1; min-width: 0;">
+            <div class="logo" style="background: var(--purple); color: white; width: 40px; height: 40px; border-radius: 12px; font-weight: 800; display:flex; align-items:center; justify-content:center; flex-shrink: 0; box-shadow: none;">
+              <i data-lucide="message-square" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <h3 style="font-size: 15px; font-weight: 800; margin: 0;" class="truncate" th:text="${session.sourceTitle}">Use Case Diagrams</h3>
+              
+              <p class="muted small mb-2 truncate" style="margin-top: 4px;" 
+                 th:text="${session.customPrompt != null && !session.customPrompt.isEmpty() ? session.customPrompt : 'Generated self-study practice quiz.'}"></p>
+              
+              <!-- Badges -->
+              <div class="flex items-center gap-2 flex-wrap" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <span class="setting-tag"><i data-lucide="file" style="width:10px;height:10px;"></i> <span th:text="${session.sourceType}">UPLOADED_FILE</span></span>
+                <span class="setting-tag"><i data-lucide="bar-chart-2" style="width:10px;height:10px;"></i> <span th:text="${session.difficulty}">MEDIUM</span></span>
+                <span class="setting-tag"><i data-lucide="help-circle" style="width:10px;height:10px;"></i> <span th:text="${session.questionType}">MCQ</span></span>
+                <span class="setting-tag"><i data-lucide="hash" style="width:10px;height:10px;"></i> <span th:text="${session.totalQuestions} + ' Qs'">5 Qs</span></span>
+                <span class="setting-tag"><i data-lucide="award" style="width:10px;height:10px;"></i> Score: <span th:text="${session.correctAnswers} + '/' + ${session.totalQuestions}">4/5</span></span>
+              </div>
+            </div>
+          </div>
+          
+          <div style="flex-shrink: 0; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+            <span class="small muted" th:text="${#temporals.format(session.createdAt, 'MMM dd, yyyy HH:mm')}">Dec 18, 2025</span>
+            <a th:href="@{/student/ai-practice/{id}(id=${session.practiceSessionId})}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:6px 12px;">
+              Review <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+            </a>
+          </div>
+        </article>
 
-              <!-- Empty state -->
-              <tr th:if="${#lists.isEmpty(history)}">
-                <td colspan="7" class="text-center muted p-4">
-                  <div style="font-size: 2rem;" class="mb-2"><i data-lucide="info"></i></div>
-                  You have not generated any practice sessions yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Empty state -->
+        <div class="card card-pad text-center muted p-5" th:if="${#lists.isEmpty(history)}" style="border-radius: 16px;">
+          <div style="font-size: 2.5rem;" class="muted mb-2"><i data-lucide="folder-open"></i></div>
+          <p>You have not generated any practice sessions yet.</p>
+          <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm mt-3"><i data-lucide="plus"></i> New Practice Session</a>
         </div>
       </div>
     </main>
   </div>
 </div>
+
 <script src="https://unpkg.com/lucide@latest"></script>
 <script th:src="@{/js/fcms.js}" src="../../../static/js/fcms.js"></script>
 </body>
