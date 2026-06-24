@@ -61,9 +61,29 @@
         <h2 class="h2 mb-4 text-primary"><i data-lucide="cpu" style="vertical-align: text-bottom;"></i> Generate Practice Session</h2>
         
         <form th:action="@{/student/ai-practice/generate}" method="POST">
-          <div class="form-group mb-3">
-            <label class="form-label" style="font-weight:750;">Select Study Material</label>
-            <select name="contentId" class="form-control" required>
+          <!-- Practice Mode Selection -->
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:750;">Practice Material Source</label>
+            <div class="flex items-center gap-4 mt-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="practiceMode" value="MATERIAL" checked id="modeMaterialRadio" />
+                <span>Class Material</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="practiceMode" value="LINK" id="modeLinkRadio" />
+                <span>Custom Link</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="practiceMode" value="FILE" id="modeFileRadio" />
+                <span>Upload File (.pdf/.pptx)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Existing dropdown container -->
+          <div class="form-group mb-3" id="materialSourceContainer">
+            <label class="form-label font-bold">Select Study Material</label>
+            <select name="contentId" id="materialSelect" class="form-control">
               <option value="">-- Choose a document or video --</option>
               <!-- Loop Materials -->
               <option th:each="content : ${contents}" 
@@ -71,6 +91,86 @@
                       th:text="${content.learningNode.classRoom.classCode} + ' - ' + ${content.title} + ' (' + ${content.contentType} + ')'"></option>
             </select>
           </div>
+
+          <!-- Custom Link container -->
+          <div class="mb-3" id="linkSourceContainer" style="display: none;">
+            <div class="form-group mb-2">
+              <label class="form-label font-bold">Paste URL Link</label>
+              <input type="url" name="linkUrl" id="linkUrlInput" class="form-control" placeholder="https://example.com/syllabus-or-slides" />
+            </div>
+            <div class="form-group">
+              <label class="form-label font-bold">Associate with Topic / Learning Node</label>
+              <select name="nodeId" id="linkNodeSelect" class="form-control">
+                <option value="">-- Choose Topic Node --</option>
+                <option th:each="node : ${nodes}" 
+                        th:value="${node.nodeId}" 
+                        th:text="${node.classRoom.classCode} + ' - ' + ${node.title}"></option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Custom File Upload container -->
+          <div class="mb-3" id="fileSourceContainer" style="display: none;">
+            <div class="form-group mb-2">
+              <label class="form-label font-bold">Choose PowerPoint/PDF File</label>
+              <input type="file" id="customPracticeFile" class="form-control" />
+              <input type="hidden" name="customFileName" id="customFileName" />
+            </div>
+            <div class="form-group">
+              <label class="form-label font-bold">Associate with Topic / Learning Node</label>
+              <select name="nodeId" id="fileNodeSelect" class="form-control">
+                <option value="">-- Choose Topic Node --</option>
+                <option th:each="node : ${nodes}" 
+                        th:value="${node.nodeId}" 
+                        th:text="${node.classRoom.classCode} + ' - ' + ${node.title}"></option>
+              </select>
+            </div>
+          </div>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const materialRadio = document.getElementById('modeMaterialRadio');
+              const linkRadio = document.getElementById('modeLinkRadio');
+              const fileRadio = document.getElementById('modeFileRadio');
+              
+              const materialContainer = document.getElementById('materialSourceContainer');
+              const linkContainer = document.getElementById('linkSourceContainer');
+              const fileContainer = document.getElementById('fileSourceContainer');
+              
+              const materialSelect = document.getElementById('materialSelect');
+              const linkUrlInput = document.getElementById('linkUrlInput');
+              const linkNodeSelect = document.getElementById('linkNodeSelect');
+              const customFile = document.getElementById('customPracticeFile');
+              const fileNodeSelect = document.getElementById('fileNodeSelect');
+              const customFileNameInput = document.getElementById('customFileName');
+
+              materialRadio.addEventListener('change', toggleContainers);
+              linkRadio.addEventListener('change', toggleContainers);
+              fileRadio.addEventListener('change', toggleContainers);
+
+              function toggleContainers() {
+                materialContainer.style.display = materialRadio.checked ? 'block' : 'none';
+                linkContainer.style.display = linkRadio.checked ? 'block' : 'none';
+                fileContainer.style.display = fileRadio.checked ? 'block' : 'none';
+                
+                // Toggle required states
+                materialSelect.required = materialRadio.checked;
+                linkUrlInput.required = linkRadio.checked;
+                linkNodeSelect.required = linkRadio.checked;
+                fileNodeSelect.required = fileRadio.checked;
+              }
+
+              // Set default required
+              materialSelect.required = true;
+
+              // Populate filename on select
+              customFile.addEventListener('change', function() {
+                if (customFile.files && customFile.files.length > 0) {
+                  customFileNameInput.value = customFile.files[0].name;
+                }
+              });
+            });
+          </script>
 
           <div class="grid mb-3" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">

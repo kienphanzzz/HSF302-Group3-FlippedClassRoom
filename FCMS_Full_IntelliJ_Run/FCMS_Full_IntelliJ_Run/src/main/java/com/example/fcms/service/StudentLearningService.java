@@ -138,4 +138,11 @@ public class StudentLearningService {
                 .flatMap(n -> contentResourceRepository.findByLearningNode_NodeIdAndVisibleTrue(n.getNodeId()).stream())
                 .collect(Collectors.toList());
     }
+
+    public List<LearningNode> getAvailableLearningNodes(Long studentId) {
+        List<ClassRoom> classes = getJoinedClasses(studentId);
+        return classes.stream()
+                .flatMap(c -> learningNodeRepository.findByClassRoom_ClassIdAndVisibleTrueOrderByOrderIndexAsc(c.getClassId()).stream())
+                .collect(Collectors.toList());
+    }
 }

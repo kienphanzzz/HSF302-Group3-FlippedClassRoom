@@ -104,16 +104,36 @@
                             th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"></textarea>
                 </div>
                 
-                <div class="form-group mb-3">
-                  <label class="form-label" style="font-weight: 750;">Upload File Attachment</label>
-                  <input type="hidden" name="filePath" id="filePath" th:value="${submission != null ? submission.filePath : ''}" />
-                  <input type="hidden" name="originalFileName" id="originalFileName" th:value="${submission != null ? submission.originalFileName : ''}" />
-                  
+                <!-- Submission Mode Toggle -->
+                <div class="mb-3">
+                  <label class="form-label" style="font-weight: 750;">Submission Method</label>
+                  <div class="flex items-center gap-4 mt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="submissionType" value="FILE" checked id="typeFileRadio" 
+                             th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
+                      <span>Upload File</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="submissionType" value="LINK" id="typeLinkRadio" 
+                             th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
+                      <span>Submit Link</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Hidden inputs for backend mapping -->
+                <input type="hidden" name="filePath" id="filePath" th:value="${submission != null ? submission.filePath : ''}" />
+                <input type="hidden" name="originalFileName" id="originalFileName" th:value="${submission != null ? submission.originalFileName : ''}" />
+
+                <!-- Upload File Container -->
+                <div class="form-group mb-3" id="fileContainer">
+                  <label class="form-label small font-bold">Select File Attachment</label>
                   <input type="file" id="submissionFile" class="form-control" 
                          th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}" />
+                  <div class="small muted mt-1">Supported formats: .doc, .docx, .pdf, .zip, .pptx, .txt (Max 500MB)</div>
                   
                   <div id="fileList" class="mt-2 flex flex-col gap-2">
-                    <div class="file-row" th:if="${submission != null and submission.originalFileName != null}">
+                    <div class="file-row" th:if="${submission != null and submission.originalFileName != null and submission.originalFileName != 'Link Submission'}">
                       <i data-lucide="paperclip" class="text-primary"></i>
                       <div>
                         <div class="small" style="font-weight:750;" th:text="${submission.originalFileName}">srs-document.pdf</div>
@@ -123,18 +143,74 @@
                   </div>
                 </div>
 
+                <!-- Submit Link Container -->
+                <div class="form-group mb-3" id="linkContainer" style="display: none;">
+                  <label class="form-label small font-bold">Enter Link</label>
+                  <input type="url" id="submissionLink" class="form-control" placeholder="https://drive.google.com/..." 
+                         th:value="${submission != null and submission.originalFileName == 'Link Submission' ? submission.filePath : ''}"
+                         th:disabled="${#temporals.createNow().isAfter(assignment.deadline) and submission != null}"/>
+                  <div class="small muted mt-1">Ensure the link is accessible (e.g., Google Drive with sharing enabled).</div>
+                </div>
+
                 <script>
                   document.addEventListener('DOMContentLoaded', function() {
+                    const fileRadio = document.getElementById('typeFileRadio');
+                    const linkRadio = document.getElementById('typeLinkRadio');
+                    const fileContainer = document.getElementById('fileContainer');
+                    const linkContainer = document.getElementById('linkContainer');
+                    
                     const fileInput = document.getElementById('submissionFile');
-                    if (fileInput) {
-                      fileInput.addEventListener('change', function() {
-                        if (fileInput.files && fileInput.files.length > 0) {
-                          const file = fileInput.files[0];
-                          document.getElementById('originalFileName').value = file.name;
-                          document.getElementById('filePath').value = 'uploads/' + file.name;
-                        }
-                      });
+                    const linkInput = document.getElementById('submissionLink');
+                    
+                    const filePathHidden = document.getElementById('filePath');
+                    const originalFileNameHidden = document.getElementById('originalFileName');
+
+                    // If existing submission is a link, check the link radio on load
+                    if (originalFileNameHidden.value === 'Link Submission') {
+                      linkRadio.checked = true;
+                      linkContainer.style.display = 'block';
+                      fileContainer.style.display = 'none';
                     }
+
+                    fileRadio.addEventListener('change', function() {
+                      if (fileRadio.checked) {
+                        fileContainer.style.display = 'block';
+                        linkContainer.style.display = 'none';
+                        // Restore file info to hidden inputs
+                        if (fileInput.files && fileInput.files.length > 0) {
+                          filePathHidden.value = 'uploads/' + fileInput.files[0].name;
+                          originalFileNameHidden.value = fileInput.files[0].name;
+                        } else {
+                          filePathHidden.value = '';
+                          originalFileNameHidden.value = '';
+                        }
+                      }
+                    });
+
+                    linkRadio.addEventListener('change', function() {
+                      if (linkRadio.checked) {
+                        linkContainer.style.display = 'block';
+                        fileContainer.style.display = 'none';
+                        // Update hidden inputs with link content
+                        filePathHidden.value = linkInput.value;
+                        originalFileNameHidden.value = 'Link Submission';
+                      }
+                    });
+
+                    fileInput.addEventListener('change', function() {
+                      if (fileInput.files && fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        filePathHidden.value = 'uploads/' + file.name;
+                        originalFileNameHidden.value = file.name;
+                      }
+                    });
+
+                    linkInput.addEventListener('input', function() {
+                      if (linkRadio.checked) {
+                        filePathHidden.value = linkInput.value;
+                        originalFileNameHidden.value = 'Link Submission';
+                      }
+                    });
                   });
                 </script>
 
