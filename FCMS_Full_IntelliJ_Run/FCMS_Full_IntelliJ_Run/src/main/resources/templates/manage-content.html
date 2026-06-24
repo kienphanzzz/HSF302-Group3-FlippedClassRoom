@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Content - FCMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../static/css/fcms.css" />
+  <style>
+    /* Content specific premium design elements */
+    .tab-container {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+    .content-tab {
+      padding: 10px 4px;
+      cursor: pointer;
+      font-weight: 750;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .content-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .content-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 18px;
+      background: #fff;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .content-item:hover {
+      box-shadow: var(--shadow);
+    }
+    .content-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .file-input-hidden {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 36, 0.4);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 500px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      transform: translateY(20px);
+      transition: transform 0.2s ease;
+    }
+    .modal.active .modal-content {
+      transform: translateY(0);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 850;
+    }
+    .modal-close {
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .modal-close:hover {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><i data-lucide="book-open"></i></div>
+      <div>
+        <div class="brand-title">FCMS</div>
+        <div class="brand-sub">Teacher Portal</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a th:href="@{/teacher/dashboard}" href="#"><i data-lucide="home"></i> Home</a>
+      <a class="active" th:href="@{/teacher/dashboard}" href="#"><i data-lucide="layout-grid"></i> My Classes</a>
+      <a th:href="@{/teacher/question-bank}" href="#"><i data-lucide="book-open"></i> Question Bank</a>
+      <a th:href="@{/teacher/progress}" href="#"><i data-lucide="bar-chart-2"></i> Progress</a>
+    </nav>
+    <div class="profile-box">
+      <div class="avatar" th:text="${#strings.substring(teacherName ?: 'TP', 0, 2)}">TP</div>
+      <div class="truncate">
+        <div class="profile-name" th:text="${teacherName ?: 'Prof. Tran Phuong'}">Prof. Tran Phuong</div>
+        <div class="profile-role">teacher</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Shell -->
+  <div class="shell">
+    <header class="topbar">
+      <div class="top-title" th:text="${classRoom.className + ' — ' + classRoom.classCode}">Software Engineering — SE2024</div>
+      <div class="switcher">
+        <a class="active" th:href="@{/teacher/dashboard}">Teacher Dashboard</a>
+        <a th:href="@{/student/learning-path}">Learning Path</a>
+        <a th:href="@{/student/ai-assistant}">AI Assistant</a>
+        <a th:href="@{/student/assignment}">Assignment</a>
+      </div>
+      <button class="icon-btn relative"><i data-lucide="bell"></i></button>
+      <div class="avatar" style="width:34px;height:34px" th:text="${#strings.substring(teacherName ?: 'TP', 0, 2)}">TP</div>
+    </header>
+
+    <main class="content">
+      <div class="page-title-row">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="h1" th:text="${topic.title}">Topic 1: Introduction</h1>
+          </div>
+          <div class="sub">Manage files and learning resources inside this topic.</div>
+        </div>
+        <a class="btn btn-outline" th:href="@{/teacher/classes/{id}(id=${classRoom.classId})}"><i data-lucide="arrow-left"></i> Back to Topics</a>
+      </div>
+
+      <!-- Feedback Messages -->
+      <div th:if="${param.success}" class="card card-pad mb-4 flex items-center gap-3" style="background:#e6f4ea; border-color:#bbf7d0; color:var(--green)">
+        <i data-lucide="check-circle-2"></i>
+        <span th:if="${param.success[0] == 'ContentAdded'}">Content added successfully!</span>
+        <span th:if="${param.success[0] == 'ContentDeleted'}">Content deleted successfully!</span>
+        <span th:if="${param.success[0] == 'VisibilityToggled'}">Visibility toggled successfully!</span>
+        <span th:if="${param.success[0] == 'ContentUpdated'}">Content updated successfully!</span>
+      </div>
+
+      <div th:if="${param.error}" class="card card-pad mb-4 flex items-center gap-3" style="background:#fdf2f2; border-color:#fecaca; color:var(--red)">
+        <i data-lucide="alert-circle"></i>
+        <span th:if="${param.error[0] == 'EmptyTitle'}">Title cannot be empty!</span>
+        <span th:if="${param.error[0] == 'NoFileSelected'}">Please select a file to upload!</span>
+        <span th:if="${param.error[0] == 'FileSizeExceeded'}">File size exceeds maximum limit of 50MB!</span>
+        <span th:if="${param.error[0] == 'InvalidFileType'}">Allowed formats: PDF, DOCX, PPTX, ZIP, and images.</span>
+        <span th:if="${param.error[0] == 'InvalidUrl'}">URL must be valid and start with http:// or https://</span>
+        <span th:if="${param.error[0] == 'FileUploadFailed'}">Failed to save uploaded file. Try again.</span>
+        <span th:if="${param.error[0] == 'Unauthorized'}">Unauthorized action!</span>
+      </div>
+
+      <div class="grid grid-2" style="align-items:start; gap:24px;">
+        <!-- Left: Current contents list -->
+        <div>
+          <h2 class="section-title" style="font-size:15px; font-weight:850;">Topic Resources</h2>
+          
+          <div th:if="${#lists.isEmpty(contents)}" class="card card-pad text-center py-5">
+            <div style="font-size:36px; color:var(--muted); margin-bottom:8px;"><i data-lucide="paperclip"></i></div>
+            <p class="muted small">No learning materials added yet. Use the form on the right to upload files or add links.</p>
+          </div>
+
+          <div th:if="${not #lists.isEmpty(contents)}">
+            <article class="content-item" th:each="content : ${contents}">
+              <div style="flex:1; min-width:0; margin-right:12px;">
+                <div class="flex items-center gap-2">
+                   <a th:href="${content.contentType == 'FILE' ? content.filePath : content.externalUrl}" 
+                      th:download="${content.contentType == 'FILE' ? content.originalFileName : null}"
+                      target="_blank" 
+                      class="node-name truncate text-primary" 
+                      style="font-size:14px; font-weight:750; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;"
+                      onmouseover="this.style.textDecoration='underline'"
+                      onmouseout="this.style.textDecoration='none'">
+                     <span th:text="${content.title}">Resource Title</span>
+                     <i th:attr="data-lucide=${content.contentType == 'FILE' ? 'download' : 'external-link'}" style="width:12px; height:12px; opacity: 0.75;"></i>
+                   </a>
+                  <span class="tag tag-gray" th:if="${!content.visible}"><i data-lucide="eye-off" style="width:10px;height:10px"></i> Hidden</span>
+                </div>
+                <div class="content-meta">
+                  <span th:if="${content.contentType == 'FILE'}" class="tag tag-primary"><i data-lucide="file-text"></i> File</span>
+                  <span th:if="${content.contentType == 'VIDEO_URL'}" class="tag tag-primary"><i data-lucide="play-circle"></i> Video</span>
+                  <span th:if="${content.contentType == 'MEETING_URL'}" class="tag tag-green"><i data-lucide="video"></i> Meet</span>
+                  <span th:if="${content.contentType == 'DOCUMENT_URL'}" class="tag tag-gray" style="background:#e0f2f7;color:#0891b2"><i data-lucide="file-text"></i> Reading</span>
+                  <span th:if="${content.contentType == 'EXTERNAL_LINK'}" class="tag tag-gray"><i data-lucide="link"></i> Link</span>
+                  
+                  <span th:if="${content.fileSize != null}" th:text="|Size: ${content.fileSize / 1024} KB|">Size: 200 KB</span>
+                  <span th:if="${content.originalFileName != null}" class="truncate" style="max-width:140px;" th:text="${content.originalFileName}">file.pdf</span>
+                  <span th:if="${content.externalUrl != null}" class="truncate" style="max-width:140px;" th:text="${content.externalUrl}">http://...</span>
+                </div>
+                <p class="small muted mt-2" style="margin-bottom:0;" th:text="${content.description ?: ''}">Description</p>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-2">
+                <button type="button" class="icon-btn" 
+                        th:data-id="${content.contentId}"
+                        th:data-title="${content.title}"
+                        th:data-description="${content.description ?: ''}"
+                        th:data-type="${content.contentType}"
+                        th:data-url="${content.externalUrl ?: ''}"
+                        th:data-file="${content.originalFileName ?: ''}"
+                        onclick="openEditContentModal(this)"
+                        title="Edit resource">
+                  <i data-lucide="edit-3"></i>
+                </button>
+                <form th:action="@{/teacher/contents/{contentId}/toggle-visibility(contentId=${content.contentId})}" method="POST" style="display:inline;">
+                  <button type="submit" class="icon-btn" th:title="${content.visible ? 'Hide resource from students' : 'Make resource visible'}">
+                    <i th:attr="data-lucide=${content.visible ? 'eye-off' : 'eye'}"></i>
+                  </button>
+                </form>
+                <form th:action="@{/teacher/contents/{contentId}/delete(contentId=${content.contentId})}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this resource?')">
+                  <button type="submit" class="icon-btn text-red" title="Delete resource">
+                    <i data-lucide="trash-2"></i>
+                  </button>
+                </form>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Right: Add content forms with Tab switcher -->
+        <div class="card card-pad">
+          <h2 class="section-title" style="font-size:15px; font-weight:850; margin-bottom:18px;">Add New Resource</h2>
+          
+          <div class="tab-container">
+            <div id="tab-file-btn" class="content-tab active" onclick="switchTab('file')">Upload File</div>
+            <div id="tab-url-btn" class="content-tab" onclick="switchTab('url')">Add Link/URL</div>
+          </div>
+
+          <!-- File Upload Form -->
+          <form id="form-file" th:action="@{/teacher/topics/{nodeId}/contents(nodeId=${topic.nodeId})}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="contentType" value="FILE" />
+            <div class="form-group mb-3">
+              <label class="label">Resource Title *</label>
+              <input class="input" type="text" name="title" required placeholder="e.g. Topic 1 Lecture Slides" />
+            </div>
+            <div class="form-group mb-3">
+              <label class="label">Description</label>
+              <textarea class="textarea" name="description" rows="2" placeholder="Brief note about the file..."></textarea>
+            </div>
+            
+            <div class="form-group mb-4">
+              <label class="label">Upload File *</label>
+              <div class="upload-box" onclick="document.getElementById('file-upload-input').click()">
+                <i data-lucide="upload-cloud" style="width:36px; height:36px; color:var(--primary); margin-bottom:8px;"></i>
+                <div class="small" style="font-weight:700;">Drag and drop or <span class="text-primary">browse files</span></div>
+                <div class="small muted mt-1">PDF, DOCX, PPTX, ZIP, or Images (Max 50MB)</div>
+                <div id="selected-file-name" class="tag tag-primary mt-3 hidden"></div>
+              </div>
+              <input id="file-upload-input" class="file-input-hidden" type="file" name="file" onchange="displaySelectedFile(this)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%"><i data-lucide="check"></i> Upload and Add</button>
+          </form>
+
+          <!-- URL / Link Form -->
+          <form id="form-url" class="hidden" th:action="@{/teacher/topics/{nodeId}/contents(nodeId=${topic.nodeId})}" method="POST">
+            <div class="form-group mb-3">
+              <label class="label">Resource Title *</label>
+              <input class="input" type="text" name="title" required placeholder="e.g. Topic 1 Recording - Youtube" />
+            </div>
+            <div class="form-group mb-3">
+              <label class="label">Description</label>
+              <textarea class="textarea" name="description" rows="2" placeholder="Brief details about the resource..."></textarea>
+            </div>
+            
+            <div class="grid grid-2 mb-3">
+              <div class="form-group">
+                <label class="label">Resource Type *</label>
+                <select class="select" name="contentType">
+                  <option value="VIDEO_URL">Video URL (e.g. YouTube)</option>
+                  <option value="DOCUMENT_URL">Document URL (e.g. Drive)</option>
+                  <option value="MEETING_URL">Meeting Link (e.g. Meet/Zoom)</option>
+                  <option value="EXTERNAL_LINK">External Website Link</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label">Duration (Minutes)</label>
+                <input class="input" type="number" name="durationMinutes" min="0" placeholder="Optional" />
+              </div>
+            </div>
+
+            <div class="form-group mb-4">
+              <label class="label">Link URL *</label>
+              <input class="input" type="url" name="externalUrl" placeholder="https://example.com/resource" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%"><i data-lucide="check"></i> Add Resource Link</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Edit Content Modal -->
+<div id="edit-content-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Resource</h3>
+      <i data-lucide="x" class="modal-close" onclick="closeModal('edit-content-modal')"></i>
+    </div>
+    <form id="edit-content-form" method="POST" enctype="multipart/form-data">
+      <div class="form-group mb-3">
+        <label class="label">Resource Title *</label>
+        <input id="edit-content-title" class="input" type="text" name="title" required />
+      </div>
+      <div class="form-group mb-3">
+        <label class="label">Description</label>
+        <textarea id="edit-content-description" class="textarea" name="description" rows="2"></textarea>
+      </div>
+
+      <!-- File selection group -->
+      <div id="edit-file-group" class="form-group mb-4 hidden">
+        <label class="label">Replace File (Optional)</label>
+        <div class="upload-box" onclick="document.getElementById('edit-file-upload-input').click()">
+          <i data-lucide="upload-cloud" style="width:36px; height:36px; color:var(--primary); margin-bottom:8px;"></i>
+          <div class="small" style="font-weight:700;">Click to <span class="text-primary">upload a new file</span></div>
+          <div class="small muted mt-1">Leave empty to keep the current file: <span id="current-file-name" style="font-weight: 700;"></span></div>
+          <div id="edit-selected-file-name" class="tag tag-primary mt-3 hidden"></div>
+        </div>
+        <input id="edit-file-upload-input" class="file-input-hidden" type="file" name="file" onchange="displayEditSelectedFile(this)" />
+      </div>
+
+      <!-- URL link group -->
+      <div id="edit-url-group" class="form-group mb-4 hidden">
+        <label class="label">Link URL *</label>
+        <input id="edit-content-url" class="input" type="url" name="externalUrl" />
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('edit-content-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+
+  function switchTab(type) {
+    if (type === 'file') {
+      document.getElementById('tab-file-btn').classList.add('active');
+      document.getElementById('tab-url-btn').classList.remove('active');
+      document.getElementById('form-file').classList.remove('hidden');
+      document.getElementById('form-url').classList.add('hidden');
+    } else {
+      document.getElementById('tab-file-btn').classList.remove('active');
+      document.getElementById('tab-url-btn').classList.add('active');
+      document.getElementById('form-file').classList.add('hidden');
+      document.getElementById('form-url').classList.remove('hidden');
+    }
+  }
+
+  function displaySelectedFile(input) {
+    const fileLabel = document.getElementById('selected-file-name');
+    if (input.files && input.files.length > 0) {
+      fileLabel.innerText = "Selected: " + input.files[0].name;
+      fileLabel.classList.remove('hidden');
+    } else {
+      fileLabel.innerText = "";
+      fileLabel.classList.add('hidden');
+    }
+  }
+
+  function displayEditSelectedFile(input) {
+    const fileLabel = document.getElementById('edit-selected-file-name');
+    if (input.files && input.files.length > 0) {
+      fileLabel.innerText = "Selected: " + input.files[0].name;
+      fileLabel.classList.remove('hidden');
+    } else {
+      fileLabel.innerText = "";
+      fileLabel.classList.add('hidden');
+    }
+  }
+
+  function openEditContentModal(button) {
+    const id = button.getAttribute('data-id');
+    const title = button.getAttribute('data-title');
+    const description = button.getAttribute('data-description');
+    const type = button.getAttribute('data-type');
+    const url = button.getAttribute('data-url');
+    const file = button.getAttribute('data-file');
+
+    const form = document.getElementById('edit-content-form');
+    form.action = `/teacher/contents/${id}/edit`;
+
+    document.getElementById('edit-content-title').value = title;
+    document.getElementById('edit-content-description').value = description;
+
+    const fileGroup = document.getElementById('edit-file-group');
+    const urlGroup = document.getElementById('edit-url-group');
+
+    // Reset file input
+    document.getElementById('edit-file-upload-input').value = "";
+    document.getElementById('edit-selected-file-name').classList.add('hidden');
+
+    if (type === 'FILE') {
+      fileGroup.classList.remove('hidden');
+      urlGroup.classList.add('hidden');
+      document.getElementById('current-file-name').innerText = file;
+      document.getElementById('edit-content-url').removeAttribute('required');
+    } else {
+      fileGroup.classList.add('hidden');
+      urlGroup.classList.remove('hidden');
+      document.getElementById('edit-content-url').value = url;
+      document.getElementById('edit-content-url').setAttribute('required', 'required');
+    }
+
+    openModal('edit-content-modal');
+  }
+</script>
+</body>
+</html>
