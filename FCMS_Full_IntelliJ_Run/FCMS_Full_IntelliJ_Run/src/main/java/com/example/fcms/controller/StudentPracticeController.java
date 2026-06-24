@@ -6,6 +6,7 @@ import com.example.fcms.service.StudentLearningService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
@@ -17,95 +18,70 @@ import java.util.Optional;
 @RequestMapping("/student")
 public class StudentPracticeController {
 
-    // TODO: Use logged-in user instead of demoStudentId when authentication is integrated
     private static final Long demoStudentId = 2L;
 
     private final PracticeService practiceService;
     private final StudentLearningService studentLearningService;
-    private final com.example.fcms.repository.ContentResourceRepository contentResourceRepository;
-    private final com.example.fcms.repository.LearningNodeRepository learningNodeRepository;
     private final com.example.fcms.repository.UserRepository userRepository;
 
     public StudentPracticeController(PracticeService practiceService, 
                                      StudentLearningService studentLearningService,
-                                     com.example.fcms.repository.ContentResourceRepository contentResourceRepository,
-                                     com.example.fcms.repository.LearningNodeRepository learningNodeRepository,
                                      com.example.fcms.repository.UserRepository userRepository) {
         this.practiceService = practiceService;
         this.studentLearningService = studentLearningService;
-        this.contentResourceRepository = contentResourceRepository;
-        this.learningNodeRepository = learningNodeRepository;
         this.userRepository = userRepository;
     }
 
     @GetMapping("/ai-practice")
     public String getPracticeIndex(Model model) {
         List<ContentResource> contents = studentLearningService.getAvailableContentResources(demoStudentId);
-        List<LearningNode> nodes = studentLearningService.getAvailableLearningNodes(demoStudentId);
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("contents", contents);
-        model.addAttribute("nodes", nodes);
         return "student/ai-practice/index";
     }
 
     @PostMapping("/ai-practice/generate")
-    public String generatePractice(@RequestParam String practiceMode,
-                                   @RequestParam(required = false) Long contentId,
-                                   @RequestParam(required = false) Long nodeId,
-                                   @RequestParam(required = false) String linkUrl,
-                                   @RequestParam(required = false) String customFileName,
-                                   @RequestParam String difficulty,
-                                   @RequestParam String questionType,
-                                   @RequestParam int count,
-                                   RedirectAttributes redirectAttributes) {
+    public String generatePractice(
+            @RequestParam(required = false) Long contentId,
+            @RequestParam(required = false) MultipartFile uploadedFile,
+            @RequestParam(required = false) String pastedText,
+            @RequestParam(required = false) String sourceUrl,
+            @RequestParam(required = false) String customPrompt,
+            @RequestParam(required = false, defaultValue = "MEDIUM") String difficulty,
+            @RequestParam(required = false, defaultValue = "MCQ") String questionType,
+            @RequestParam(required = false, defaultValue = "5") Integer numberOfQuestions,
+            RedirectAttributes redirectAttributes) {
         try {
-            Long finalContentId = contentId;
-            User student = userRepository.findById(demoStudentId)
-                    .orElseThrow(() -> new IllegalArgumentException("Student not found."));
+            // Basic source validation
+            boolean hasSource = (contentId != null)
+                    || (uploadedFile != null && !uploadedFile.isEmpty())
+                    || (pastedText != null && !pastedText.trim().isEmpty())
+                    || (sourceUrl != null && !sourceUrl.trim().isEmpty())
+                    || (customPrompt != null && !customPrompt.trim().isEmpty());
 
-            if ("LINK".equalsIgnoreCase(practiceMode)) {
-                if (linkUrl == null || linkUrl.trim().isEmpty() || nodeId == null) {
-                    throw new IllegalArgumentException("Link URL and Topic Node are required for custom link practice.");
-                }
-                LearningNode node = learningNodeRepository.findById(nodeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Learning Node not found."));
-                ContentResource newRes = ContentResource.builder()
-                        .learningNode(node)
-                        .uploadedBy(student)
-                        .title("Custom Link: " + (linkUrl.length() > 30 ? linkUrl.substring(0, 30) + "..." : linkUrl))
-                        .description("Custom study resource submitted by student.")
-                        .contentType("EXTERNAL_LINK")
-                        .externalUrl(linkUrl)
-                        .visible(true)
-                        .build();
-                newRes = contentResourceRepository.save(newRes);
-                finalContentId = newRes.getContentId();
-
-            } else if ("FILE".equalsIgnoreCase(practiceMode)) {
-                if (customFileName == null || customFileName.trim().isEmpty() || nodeId == null) {
-                    throw new IllegalArgumentException("File and Topic Node are required for custom file practice.");
-                }
-                LearningNode node = learningNodeRepository.findById(nodeId)
-                        .orElseThrow(() -> new IllegalArgumentException("Learning Node not found."));
-                ContentResource newRes = ContentResource.builder()
-                        .learningNode(node)
-                        .uploadedBy(student)
-                        .title("Custom File: " + customFileName)
-                        .description("Custom file upload submitted by student.")
-                        .contentType("FILE")
-                        .filePath("uploads/" + customFileName)
-                        .originalFileName(customFileName)
-                        .visible(true)
-                        .build();
-                newRes = contentResourceRepository.save(newRes);
-                finalContentId = newRes.getContentId();
+            if (!hasSource) {
+                throw new IllegalArgumentException("Please provide at least one study material source (file, text, URL, selected content) or custom prompt instructions.");
             }
 
-            if (finalContentId == null) {
-                throw new IllegalArgumentException("No study material selected.");
+            if (numberOfQuestions == null) {
+                numberOfQuestions = 5;
+            }
+            if (numberOfQuestions < 1 || numberOfQuestions > 10) {
+                throw new IllegalArgumentException("Number of questions must be between 1 and 10.");
             }
 
-            PracticeSession session = practiceService.generatePracticeSession(demoStudentId, finalContentId, difficulty, questionType, count);
+            PracticeSession session = practiceService.generatePracticeSession(
+                    demoStudentId,
+                    contentId,
+                    uploadedFile,
+                    pastedText,
+                    sourceUrl,
+                    customPrompt,
+                    difficulty,
+                    questionType,
+                    numberOfQuestions
+            );
+
             return "redirect:/student/ai-practice/" + session.getPracticeSessionId();
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -127,7 +103,6 @@ public class StudentPracticeController {
         model.addAttribute("session", session);
         model.addAttribute("questions", questions);
         
-        // Check if any question has already been answered to determine if session is completed
         boolean completed = questions.stream().anyMatch(q -> q.getStudentAnswer() != null);
         model.addAttribute("completed", completed);
 

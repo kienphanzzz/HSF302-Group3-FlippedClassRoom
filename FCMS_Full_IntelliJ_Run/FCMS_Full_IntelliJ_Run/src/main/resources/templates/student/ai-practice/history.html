@@ -67,7 +67,8 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Study Material</th>
+                <th>Source Material</th>
+                <th>Source Type</th>
                 <th>Difficulty</th>
                 <th>Question Type</th>
                 <th>Date Generated</th>
@@ -79,8 +80,11 @@
               <!-- Loop Sessions -->
               <tr th:each="session : ${history}">
                 <td>
-                  <div style="font-weight: 750;" th:text="${session.content.title}">Use Case Diagrams — Lecture Slides</div>
-                  <div class="small muted" th:text="${session.content.learningNode.classRoom.className}">Software Engineering</div>
+                  <div style="font-weight: 750;" th:text="${session.sourceTitle}">Use Case Diagrams — Lecture Slides</div>
+                  <div class="small muted" th:text="${session.content != null ? session.content.learningNode.classRoom.className : 'Custom AI Resource'}">Software Engineering</div>
+                </td>
+                <td>
+                  <span class="tag tag-purple" th:text="${session.sourceType}">UPLOADED_FILE</span>
                 </td>
                 <td>
                   <span class="tag tag-primary" th:text="${session.difficulty}">MEDIUM</span>
@@ -101,7 +105,7 @@
 
               <!-- Empty state -->
               <tr th:if="${#lists.isEmpty(history)}">
-                <td colspan="6" class="text-center muted p-4">
+                <td colspan="7" class="text-center muted p-4">
                   <div style="font-size: 2rem;" class="mb-2"><i data-lucide="info"></i></div>
                   You have not generated any practice sessions yet.
                 </td>

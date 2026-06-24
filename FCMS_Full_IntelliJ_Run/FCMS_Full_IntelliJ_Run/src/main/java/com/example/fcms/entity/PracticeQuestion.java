@@ -28,6 +28,18 @@ public class PracticeQuestion {
     @Column(name = "question_type", nullable = false, length = 30)
     private String questionType;
 
+    @Column(name = "option_a", length = 1000)
+    private String optionA;
+
+    @Column(name = "option_b", length = 1000)
+    private String optionB;
+
+    @Column(name = "option_c", length = 1000)
+    private String optionC;
+
+    @Column(name = "option_d", length = 1000)
+    private String optionD;
+
     @Column(name = "correct_answer", columnDefinition = "NVARCHAR(MAX)")
     private String correctAnswer;
 

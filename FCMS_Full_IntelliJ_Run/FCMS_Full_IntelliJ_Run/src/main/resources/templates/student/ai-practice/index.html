@@ -56,126 +56,72 @@
         </div>
       </div>
 
+      <!-- Error Message Alert -->
+      <div class="card card-pad mb-4 flex items-start gap-3" style="background-color: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;" th:if="${errorMessage}">
+        <i data-lucide="x-circle" style="width:24px;height:24px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Error</strong>
+          <span class="small font-bold" th:text="${errorMessage}">Something went wrong.</span>
+        </div>
+      </div>
+
+      <!-- Success Message Alert -->
+      <div class="card card-pad mb-4 flex items-start gap-3" style="background-color: #f3faf5; border: 1px solid #def7ec; color: #03543f;" th:if="${successMessage}">
+        <i data-lucide="check-circle" style="width:24px;height:24px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Success</strong>
+          <span class="small font-bold" th:text="${successMessage}">Operation completed successfully.</span>
+        </div>
+      </div>
+
       <!-- Setup Form -->
       <div class="card card-pad" style="max-width: 680px; margin: 0 auto;">
         <h2 class="h2 mb-4 text-primary"><i data-lucide="cpu" style="vertical-align: text-bottom;"></i> Generate Practice Session</h2>
         
-        <form th:action="@{/student/ai-practice/generate}" method="POST">
-          <!-- Practice Mode Selection -->
-          <div class="mb-3">
-            <label class="form-label" style="font-weight:750;">Practice Material Source</label>
-            <div class="flex items-center gap-4 mt-2">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="practiceMode" value="MATERIAL" checked id="modeMaterialRadio" />
-                <span>Class Material</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="practiceMode" value="LINK" id="modeLinkRadio" />
-                <span>Custom Link</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="practiceMode" value="FILE" id="modeFileRadio" />
-                <span>Upload File (.pdf/.pptx)</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Existing dropdown container -->
-          <div class="form-group mb-3" id="materialSourceContainer">
-            <label class="form-label font-bold">Select Study Material</label>
-            <select name="contentId" id="materialSelect" class="form-control">
+        <form th:action="@{/student/ai-practice/generate}" method="POST" enctype="multipart/form-data">
+          
+          <!-- Source Option 1: Existing Content -->
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight:750;">Select Existing Class Content (Optional)</label>
+            <select name="contentId" class="form-control">
               <option value="">-- Choose a document or video --</option>
-              <!-- Loop Materials -->
               <option th:each="content : ${contents}" 
                       th:value="${content.contentId}" 
                       th:text="${content.learningNode.classRoom.classCode} + ' - ' + ${content.title} + ' (' + ${content.contentType} + ')'"></option>
             </select>
           </div>
 
-          <!-- Custom Link container -->
-          <div class="mb-3" id="linkSourceContainer" style="display: none;">
-            <div class="form-group mb-2">
-              <label class="form-label font-bold">Paste URL Link</label>
-              <input type="url" name="linkUrl" id="linkUrlInput" class="form-control" placeholder="https://example.com/syllabus-or-slides" />
-            </div>
-            <div class="form-group">
-              <label class="form-label font-bold">Associate with Topic / Learning Node</label>
-              <select name="nodeId" id="linkNodeSelect" class="form-control">
-                <option value="">-- Choose Topic Node --</option>
-                <option th:each="node : ${nodes}" 
-                        th:value="${node.nodeId}" 
-                        th:text="${node.classRoom.classCode} + ' - ' + ${node.title}"></option>
-              </select>
-            </div>
+          <!-- Source Option 2: Upload File -->
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight:750;">Upload Lesson File (Optional)</label>
+            <input type="file" name="uploadedFile" class="form-control" accept=".txt,.pdf,.docx" />
+            <span class="muted small">Supported extensions: .txt, .pdf, .docx</span>
           </div>
 
-          <!-- Custom File Upload container -->
-          <div class="mb-3" id="fileSourceContainer" style="display: none;">
-            <div class="form-group mb-2">
-              <label class="form-label font-bold">Choose PowerPoint/PDF File</label>
-              <input type="file" id="customPracticeFile" class="form-control" />
-              <input type="hidden" name="customFileName" id="customFileName" />
-            </div>
-            <div class="form-group">
-              <label class="form-label font-bold">Associate with Topic / Learning Node</label>
-              <select name="nodeId" id="fileNodeSelect" class="form-control">
-                <option value="">-- Choose Topic Node --</option>
-                <option th:each="node : ${nodes}" 
-                        th:value="${node.nodeId}" 
-                        th:text="${node.classRoom.classCode} + ' - ' + ${node.title}"></option>
-              </select>
-            </div>
+          <!-- Source Option 3: Paste Text -->
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight:750;">Or Paste Lesson Text (Optional)</label>
+            <textarea name="pastedText" class="form-control" rows="4" placeholder="Paste your lesson text here..."></textarea>
           </div>
 
-          <script>
-            document.addEventListener('DOMContentLoaded', function() {
-              const materialRadio = document.getElementById('modeMaterialRadio');
-              const linkRadio = document.getElementById('modeLinkRadio');
-              const fileRadio = document.getElementById('modeFileRadio');
-              
-              const materialContainer = document.getElementById('materialSourceContainer');
-              const linkContainer = document.getElementById('linkSourceContainer');
-              const fileContainer = document.getElementById('fileSourceContainer');
-              
-              const materialSelect = document.getElementById('materialSelect');
-              const linkUrlInput = document.getElementById('linkUrlInput');
-              const linkNodeSelect = document.getElementById('linkNodeSelect');
-              const customFile = document.getElementById('customPracticeFile');
-              const fileNodeSelect = document.getElementById('fileNodeSelect');
-              const customFileNameInput = document.getElementById('customFileName');
+          <!-- Source Option 4: Link URL -->
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight:750;">Or Paste Source URL (Optional)</label>
+            <input type="url" name="sourceUrl" class="form-control" placeholder="https://example.com/syllabus-or-slides" />
+          </div>
 
-              materialRadio.addEventListener('change', toggleContainers);
-              linkRadio.addEventListener('change', toggleContainers);
-              fileRadio.addEventListener('change', toggleContainers);
+          <!-- Step 2: Custom Chat Prompt -->
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight:800; color:var(--primary);">Custom AI Instructions / Chat Prompt (Optional)</label>
+            <textarea name="customPrompt" class="form-control" rows="3" placeholder="e.g., Create 5 questions. The correct answer should be the shortest answer. Difficulty is medium. Focus on social constructivism."></textarea>
+            <span class="muted small">Tip: Tell the AI what topic to focus on, choose difficulty/counts, or specify custom correct answer constraints.</span>
+          </div>
 
-              function toggleContainers() {
-                materialContainer.style.display = materialRadio.checked ? 'block' : 'none';
-                linkContainer.style.display = linkRadio.checked ? 'block' : 'none';
-                fileContainer.style.display = fileRadio.checked ? 'block' : 'none';
-                
-                // Toggle required states
-                materialSelect.required = materialRadio.checked;
-                linkUrlInput.required = linkRadio.checked;
-                linkNodeSelect.required = linkRadio.checked;
-                fileNodeSelect.required = fileRadio.checked;
-              }
-
-              // Set default required
-              materialSelect.required = true;
-
-              // Populate filename on select
-              customFile.addEventListener('change', function() {
-                if (customFile.files && customFile.files.length > 0) {
-                  customFileNameInput.value = customFile.files[0].name;
-                }
-              });
-            });
-          </script>
-
+          <!-- Step 3: Parameters -->
           <div class="grid mb-3" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
               <label class="form-label" style="font-weight:750;">Difficulty Level</label>
-              <select name="difficulty" class="form-control" required>
+              <select name="difficulty" class="form-control">
                 <option value="EASY">Easy</option>
                 <option value="MEDIUM" selected>Medium</option>
                 <option value="HARD">Hard</option>
@@ -183,7 +129,7 @@
             </div>
             <div class="form-group">
               <label class="form-label" style="font-weight:750;">Question Type</label>
-              <select name="questionType" class="form-control" required>
+              <select name="questionType" class="form-control">
                 <option value="MCQ" selected>Multiple Choice (MCQ)</option>
                 <option value="TRUE_FALSE">True / False</option>
                 <option value="SHORT_ANSWER">Short Answer / Essay</option>
@@ -193,7 +139,7 @@
 
           <div class="form-group mb-4">
             <label class="form-label" style="font-weight:750;">Number of Questions (1 - 10)</label>
-            <input type="number" name="count" class="form-control" min="1" max="10" value="5" required />
+            <input type="number" name="numberOfQuestions" class="form-control" min="1" max="10" value="5" />
           </div>
 
           <button type="submit" class="btn btn-primary w-full flex items-center justify-center gap-2">
