@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: page(title=${title}, content=~{::content})}">
+<th:block th:ref="content">
+<div th:fragment="content">
+
+    <!-- ══════════════════════════════════════
+         TEACHER DASHBOARD
+         ══════════════════════════════════════ -->
+    <div th:if="${session.currentUserRole == 'TEACHER'}">
+
+        <!-- Page header -->
+        <div class="page-title-row">
+            <div>
+                <div class="h1">Welcome back, <span th:text="${#strings.substringBefore(currentUser.fullName, ' ')}">Prof</span>! 👋</div>
+                <div class="sub">Here's what's happening in your classes today.</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <a href="/teacher/classes" class="btn btn-soft">
+                    <i data-lucide="list" style="width:15px;"></i> All Classes
+                </a>
+                <button onclick="document.getElementById('createClassModal').style.display='flex'"
+                        class="btn btn-primary">
+                    <i data-lucide="plus" style="width:15px;"></i> New Class
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-4" style="margin-bottom:24px;">
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-primary-light">
+                    <i data-lucide="book-open" style="width:20px; color:var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Active Classes</div>
+                    <div class="stat-value" th:text="${classCount}">0</div>
+                </div>
+            </div>
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-orange-light">
+                    <i data-lucide="users" style="width:20px; color:var(--accent);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Total Students</div>
+                    <div class="stat-value" th:text="${totalStudents}">0</div>
+                </div>
+            </div>
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-green-light">
+                    <i data-lucide="help-circle" style="width:20px; color:var(--green);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Question Bank</div>
+                    <div class="stat-value">—</div>
+                </div>
+            </div>
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-purple-light">
+                    <i data-lucide="clipboard-check" style="width:20px; color:var(--purple);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Pending Reviews</div>
+                    <div class="stat-value">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classes section -->
+        <div class="section-title">My Classes</div>
+
+        <!-- Empty state -->
+        <div th:if="${#lists.isEmpty(classes)}"
+             style="text-align:center; padding:60px 20px; color:var(--muted);">
+            <div style="font-size:3rem; margin-bottom:12px;">🏫</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:6px;">No classes yet</div>
+            <div style="font-size:0.875rem; margin-bottom:20px;">Create your first class to get started.</div>
+            <button onclick="document.getElementById('createClassModal').style.display='flex'"
+                    class="btn btn-primary">
+                <i data-lucide="plus" style="width:15px;"></i> Create Class
+            </button>
+        </div>
+
+        <!-- Class cards grid -->
+        <div class="grid grid-3" th:unless="${#lists.isEmpty(classes)}">
+            <div th:each="cls : ${classes}" class="card class-card">
+                <div class="class-top">
+                    <div class="class-icon bg-primary-light">
+                        <i data-lucide="book-open" style="width:20px; color:var(--primary);"></i>
+                    </div>
+                    <div class="class-name" th:text="${cls.className}">Class Name</div>
+                    <div class="class-semester" th:text="${cls.subjectCode ?: 'No subject code'}">Code</div>
+                </div>
+                <div class="code-row">
+                    <div class="code-badge" th:text="${cls.classCode}">CODE</div>
+                </div>
+                <div class="meta-row">
+                    <span><i data-lucide="users" style="width:13px;"></i>
+                        <span th:text="${cls.studentCount} + ' students'">0 students</span>
+                    </span>
+                </div>
+                <div class="card-footer">
+                    <a th:href="@{/teacher/classes/{id}(id=${cls.classId})}" class="open-link">
+                        Open Class <i data-lucide="arrow-right" style="width:13px;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div><!-- end TEACHER -->
+
+
+    <!-- ══════════════════════════════════════
+         STUDENT DASHBOARD
+         ══════════════════════════════════════ -->
+    <div th:if="${session.currentUserRole == 'STUDENT'}">
+
+        <!-- Page header -->
+        <div class="page-title-row">
+            <div>
+                <div class="h1">Hello, <span th:text="${#strings.substringBefore(currentUser.fullName, ' ')}">Student</span>! 📚</div>
+                <div class="sub">Continue your learning journey.</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('joinClassModal').style.display='flex'"
+                        class="btn btn-primary">
+                    <i data-lucide="plus" style="width:15px;"></i> Join Class
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-4" style="margin-bottom:24px;">
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-primary-light">
+                    <i data-lucide="book-open" style="width:20px; color:var(--primary);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Enrolled Classes</div>
+                    <div class="stat-value" th:text="${classCount}">0</div>
+                </div>
+            </div>
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-orange-light">
+                    <i data-lucide="clipboard-list" style="width:20px; color:var(--accent);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Assignments Due</div>
+                    <div class="stat-value">—</div>
+                </div>
+            </div>
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-green-light">
+                    <i data-lucide="trending-up" style="width:20px; color:var(--green);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Avg Progress</div>
+                    <div class="stat-value">—</div>
+                </div>
+            </div>
+            <div class="card card-pad stat-card">
+                <div class="stat-icon bg-purple-light">
+                    <i data-lucide="bot" style="width:20px; color:var(--purple);"></i>
+                </div>
+                <div>
+                    <div class="stat-label">AI Sessions</div>
+                    <div class="stat-value">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My classes -->
+        <div class="section-title">My Classes</div>
+
+        <!-- Empty state -->
+        <div th:if="${#lists.isEmpty(classes)}"
+             style="text-align:center; padding:60px 20px; color:var(--muted);">
+            <div style="font-size:3rem; margin-bottom:12px;">🎒</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:6px;">You haven't joined any class yet</div>
+            <div style="font-size:0.875rem; margin-bottom:20px;">Ask your teacher for the 6-character class code.</div>
+            <button onclick="document.getElementById('joinClassModal').style.display='flex'"
+                    class="btn btn-primary">
+                <i data-lucide="plus" style="width:15px;"></i> Join with Code
+            </button>
+        </div>
+
+        <!-- Class cards -->
+        <div class="grid grid-3" th:unless="${#lists.isEmpty(classes)}">
+            <div th:each="cls : ${classes}" class="card class-card">
+                <div class="class-top">
+                    <div class="class-icon bg-primary-light">
+                        <i data-lucide="book-open" style="width:20px; color:var(--primary);"></i>
+                    </div>
+                    <div class="class-name" th:text="${cls.className}">Class Name</div>
+                    <div class="class-semester"
+                         th:text="'Teacher: ' + ${cls.teacherName}">Teacher</div>
+                </div>
+                <div class="code-row">
+                    <div class="code-badge" th:text="${cls.classCode}">CODE</div>
+                </div>
+                <div class="meta-row">
+                    <span><i data-lucide="users" style="width:13px;"></i>
+                        <span th:text="${cls.studentCount} + ' students'">0</span>
+                    </span>
+                </div>
+                <div class="card-footer">
+                    <a th:href="@{/student/classes/{id}(id=${cls.classId})}" class="open-link">
+                        Go to Class <i data-lucide="arrow-right" style="width:13px;"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div><!-- end STUDENT -->
+
+
+    <!-- ══════════════════════════════════════
+         MODAL: Create Class (Teacher)
+         ══════════════════════════════════════ -->
+    <div id="createClassModal"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+                z-index:200; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:white; border-radius:20px; padding:28px; width:100%; max-width:440px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <h3 style="margin:0; font-size:1.1rem;">Create New Class</h3>
+                <button onclick="document.getElementById('createClassModal').style.display='none'"
+                        style="color:var(--muted); font-size:1.2rem; cursor:pointer; background:none; border:none;">✕</button>
+            </div>
+            <div id="createAlert" style="display:none; padding:10px; border-radius:10px; font-size:0.85rem; margin-bottom:12px;"></div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="label">Class Name *</label>
+                <input id="cc-name" class="input" placeholder="e.g. Software Engineering" maxlength="150">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="label">Subject Code</label>
+                <input id="cc-code" class="input" placeholder="e.g. SE301" maxlength="50">
+            </div>
+            <div class="form-group" style="margin-bottom:20px;">
+                <label class="label">Description</label>
+                <textarea id="cc-desc" class="textarea" rows="3" placeholder="Optional description..."></textarea>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('createClassModal').style.display='none'"
+                        class="btn btn-outline" style="flex:1;">Cancel</button>
+                <button onclick="createClass()" class="btn btn-primary" style="flex:1;" id="createBtn">
+                    Create Class
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: Join Class (Student)
+         ══════════════════════════════════════ -->
+    <div id="joinClassModal"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+                z-index:200; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:white; border-radius:20px; padding:28px; width:100%; max-width:380px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <h3 style="margin:0; font-size:1.1rem;">Join a Class</h3>
+                <button onclick="document.getElementById('joinClassModal').style.display='none'"
+                        style="color:var(--muted); font-size:1.2rem; cursor:pointer; background:none; border:none;">✕</button>
+            </div>
+            <div id="joinAlert" style="display:none; padding:10px; border-radius:10px; font-size:0.85rem; margin-bottom:12px;"></div>
+            <div class="form-group" style="margin-bottom:20px;">
+                <label class="label">Class Code (6 characters)</label>
+                <input id="jc-code" class="input"
+                       placeholder="e.g. ABC123" maxlength="6"
+                       style="text-align:center; letter-spacing:6px; font-size:1.3rem; font-weight:800; text-transform:uppercase;">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('joinClassModal').style.display='none'"
+                        class="btn btn-outline" style="flex:1;">Cancel</button>
+                <button onclick="joinClass()" class="btn btn-primary" style="flex:1;" id="joinBtn">
+                    Join Class
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+</th:block>
+</th:block>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    // ─── Create Class (Teacher) ───────────────────────────────────────────────
+    async function createClass() {
+        const name = document.getElementById('cc-name').value.trim();
+        const code = document.getElementById('cc-code').value.trim();
+        const desc = document.getElementById('cc-desc').value.trim();
+        const alert = document.getElementById('createAlert');
+
+        if (!name) { showModalAlert('createAlert', '❌ Class name is required.', 'error'); return; }
+
+        document.getElementById('createBtn').textContent = 'Creating...';
+        document.getElementById('createBtn').disabled = true;
+
+        try {
+            const res = await fetch('/api/classes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ className: name, subjectCode: code || null, description: desc || null })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showModalAlert('createAlert', '✅ Class created! Code: ' + data.classCode, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showModalAlert('createAlert', '❌ ' + (data.message || 'Failed to create class.'), 'error');
+            }
+        } catch { showModalAlert('createAlert', '❌ Network error.', 'error'); }
+        finally {
+            document.getElementById('createBtn').textContent = 'Create Class';
+            document.getElementById('createBtn').disabled = false;
+        }
+    }
+
+    // ─── Join Class (Student) ─────────────────────────────────────────────────
+    async function joinClass() {
+        const code = document.getElementById('jc-code').value.trim().toUpperCase();
+        if (code.length !== 6) { showModalAlert('joinAlert', '❌ Please enter a 6-character class code.', 'error'); return; }
+
+        document.getElementById('joinBtn').textContent = 'Joining...';
+        document.getElementById('joinBtn').disabled = true;
+
+        try {
+            const res = await fetch('/api/classes/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ classCode: code })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showModalAlert('joinAlert', '✅ Joined "' + data.className + '" successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showModalAlert('joinAlert', '❌ ' + (data.message || 'Invalid class code.'), 'error');
+            }
+        } catch { showModalAlert('joinAlert', '❌ Network error.', 'error'); }
+        finally {
+            document.getElementById('joinBtn').textContent = 'Join Class';
+            document.getElementById('joinBtn').disabled = false;
+        }
+    }
+
+    function showModalAlert(id, msg, type) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.background = type === 'success' ? '#d1fae5' : '#fee2e2';
+        el.style.color = type === 'success' ? '#065f46' : '#991b1b';
+        el.style.display = 'block';
+    }
+
+    // Close modal on backdrop click
+    ['createClassModal','joinClassModal'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', (e) => {
+            if (e.target.id === id) e.target.style.display = 'none';
+        });
+    });
+</script>
+</body>
+</html>

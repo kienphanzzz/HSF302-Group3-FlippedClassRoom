@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Your Role - FCMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../static/css/fcms.css">
+    <style>
+        .role-select-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%);
+            padding: 2rem;
+        }
+        .role-select-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(20px);
+        }
+        .google-user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .google-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .google-avatar-placeholder {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+        }
+        .google-user-text { text-align: left; }
+        .google-user-text strong { display: block; color: white; font-size: 0.95rem; }
+        .google-user-text span { color: rgba(255,255,255,0.5); font-size: 0.82rem; }
+
+        .role-title { color: white; font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .role-subtitle { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 2rem; }
+
+        .role-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .role-card {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 1.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+        }
+        .role-card:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); transform: translateY(-2px); }
+        .role-card.selected-teacher { border-color: #1a73e8; background: rgba(26,115,232,0.12); }
+        .role-card.selected-student { border-color: #34a853; background: rgba(52,168,83,0.12); }
+        .role-card-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+        .role-card-title { color: white; font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+        .role-card-desc { color: rgba(255,255,255,0.45); font-size: 0.78rem; line-height: 1.4; }
+
+        .continue-btn {
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white;
+            transition: all 0.2s;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .continue-btn.active { opacity: 1; pointer-events: auto; }
+        .continue-btn.active:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(26,115,232,0.4); }
+        .error-msg { color: #ff6b6b; font-size: 0.85rem; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+<div class="role-select-page">
+    <div class="role-select-card">
+
+        <!-- Thông tin Google user -->
+        <div class="google-user-info">
+            <img th:if="${pendingAvatar != null}" th:src="${pendingAvatar}"
+                 class="google-avatar" alt="Google avatar">
+            <div th:if="${pendingAvatar == null}" class="google-avatar-placeholder"
+                 th:text="${#strings.substring(pendingName, 0, 1)}">A</div>
+            <div class="google-user-text">
+                <strong th:text="${pendingName}">Your Name</strong>
+                <span th:text="${pendingEmail}">your@email.com</span>
+            </div>
+        </div>
+
+        <h1 class="role-title">How will you use FCMS?</h1>
+        <p class="role-subtitle">Choose your role to set up your account correctly. This cannot be changed later.</p>
+
+        <!-- Chọn role -->
+        <div class="role-cards">
+            <div class="role-card" id="card-teacher" onclick="selectRole('TEACHER')">
+                <div class="role-card-icon">👨‍🏫</div>
+                <div class="role-card-title">Teacher</div>
+                <div class="role-card-desc">Create classes, upload materials, manage assignments &amp; quizzes</div>
+            </div>
+            <div class="role-card" id="card-student" onclick="selectRole('STUDENT')">
+                <div class="role-card-icon">🎒</div>
+                <div class="role-card-title">Student</div>
+                <div class="role-card-desc">Join classes, watch videos, practice with AI, submit assignments</div>
+            </div>
+        </div>
+
+        <button class="continue-btn" id="continueBtn" onclick="submit()">
+            Continue →
+        </button>
+        <div class="error-msg" id="errorMsg"></div>
+    </div>
+</div>
+
+<script>
+    let selectedRole = null;
+
+    function selectRole(role) {
+        selectedRole = role;
+        document.getElementById('card-teacher').className = 'role-card' + (role === 'TEACHER' ? ' selected-teacher' : '');
+        document.getElementById('card-student').className = 'role-card' + (role === 'STUDENT' ? ' selected-student' : '');
+        document.getElementById('continueBtn').classList.add('active');
+    }
+
+    async function submit() {
+        if (!selectedRole) return;
+
+        const btn = document.getElementById('continueBtn');
+        btn.textContent = 'Setting up your account...';
+        btn.classList.remove('active');
+
+        try {
+            const res = await fetch('/api/auth/google/complete?role=' + selectedRole, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                showError(err.message || 'Something went wrong. Please try again.');
+                btn.textContent = 'Continue →';
+                btn.classList.add('active');
+                return;
+            }
+
+            await res.json();
+            window.location.href = '/dashboard';
+
+        } catch (e) {
+            showError('Network error. Please try again.');
+            btn.textContent = 'Continue →';
+            btn.classList.add('active');
+        }
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+</script>
+</body>
+</html>

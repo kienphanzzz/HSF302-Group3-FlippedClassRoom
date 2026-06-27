@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Profile')}"></head>
+<body>
+
+<th:block th:replace="~{fragments/layout :: page(title=${title}, content=~{::content})}">
+<th:block th:ref="content">
+<div th:fragment="content">
+
+    <div class="page-title-row">
+        <div>
+            <div class="h1">My Profile</div>
+            <div class="sub">View and update your personal information.</div>
+        </div>
+    </div>
+
+    <div class="grid grid-2" style="align-items:start;">
+        <div class="card card-pad">
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+                <img th:if="${currentUser.avatarUrl != null}"
+                     th:src="${currentUser.avatarUrl}"
+                     alt="Avatar"
+                     style="width:72px; height:72px; border-radius:50%; object-fit:cover;">
+                <div th:if="${currentUser.avatarUrl == null}"
+                     class="avatar"
+                     th:classappend="${session.currentUserRole == 'STUDENT'} ? 'student'"
+                     th:text="${#strings.substring(currentUser.fullName, 0, 1)}"
+                     style="width:72px; height:72px; font-size:24px;">A</div>
+                <div>
+                    <div style="font-size:18px; font-weight:850;" th:text="${currentUser.fullName}">Name</div>
+                    <div class="muted small" th:text="${currentUser.email}">email@example.com</div>
+                    <div class="tag tag-primary mt-3" th:text="${session.currentUserRole}">ROLE</div>
+                </div>
+            </div>
+
+            <div class="grid" style="gap:12px;">
+                <div>
+                    <div class="label">Status</div>
+                    <div th:text="${currentUser.status}">ACTIVE</div>
+                </div>
+                <div>
+                    <div class="label">Phone</div>
+                    <div th:text="${currentUser.phone ?: 'Not added'}">Not added</div>
+                </div>
+                <div>
+                    <div class="label">Bio</div>
+                    <div th:text="${currentUser.bio ?: 'Not added'}">Not added</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-pad">
+            <div class="section-title">Edit Profile</div>
+            <div id="profileAlert" style="display:none; padding:10px 14px; border-radius:10px; font-size:0.85rem; margin-bottom:14px;"></div>
+
+            <form id="profileForm">
+                <div class="form-group mb-3">
+                    <label>Full name</label>
+                    <input id="fullName" class="input" th:value="${currentUser.fullName}" maxlength="100" required>
+                    <div class="field-error" id="err-fullName"></div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Phone</label>
+                    <input id="phone" class="input" th:value="${currentUser.phone}" maxlength="20" placeholder="Optional">
+                    <div class="field-error" id="err-phone"></div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Avatar URL</label>
+                    <input id="avatarUrl" class="input" th:value="${currentUser.avatarUrl}" maxlength="500" placeholder="https://...">
+                    <div class="field-error" id="err-avatarUrl"></div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label>Bio</label>
+                    <textarea id="bio" class="textarea" rows="4" maxlength="500" placeholder="Tell people a little about you..." th:text="${currentUser.bio}"></textarea>
+                    <div class="field-error" id="err-bio"></div>
+                </div>
+
+                <button class="btn btn-primary" type="submit" id="saveProfileBtn">
+                    <i data-lucide="save" style="width:15px;"></i> Save Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+</th:block>
+</th:block>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    const profileForm = document.getElementById('profileForm');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const profileAlert = document.getElementById('profileAlert');
+
+    profileForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        clearProfileErrors();
+
+        const fullName = document.getElementById('fullName').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const avatarUrl = document.getElementById('avatarUrl').value.trim();
+        const bio = document.getElementById('bio').value.trim();
+
+        if (!fullName) {
+            showFieldError('err-fullName', 'Full name is required');
+            return;
+        }
+
+        saveProfileBtn.disabled = true;
+        saveProfileBtn.textContent = 'Saving...';
+
+        try {
+            const response = await fetch('/api/users/me', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullName, phone, avatarUrl, bio })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showProfileAlert('Profile updated successfully. Reloading...', 'success');
+                setTimeout(() => window.location.reload(), 900);
+                return;
+            }
+
+            if (data.fieldErrors) {
+                Object.entries(data.fieldErrors).forEach(([field, message]) => {
+                    showFieldError('err-' + field, message);
+                });
+            } else {
+                showProfileAlert(data.message || 'Failed to update profile.', 'error');
+            }
+        } catch {
+            showProfileAlert('Network error. Please try again.', 'error');
+        } finally {
+            saveProfileBtn.disabled = false;
+            saveProfileBtn.innerHTML = '<i data-lucide="save" style="width:15px;"></i> Save Profile';
+            lucide.createIcons();
+        }
+    });
+
+    function clearProfileErrors() {
+        document.querySelectorAll('.field-error').forEach((element) => {
+            element.textContent = '';
+            element.style.display = 'none';
+        });
+        profileAlert.style.display = 'none';
+    }
+
+    function showFieldError(id, message) {
+        const element = document.getElementById(id);
+        if (!element) return;
+
+        element.textContent = message;
+        element.style.display = 'block';
+    }
+
+    function showProfileAlert(message, type) {
+        profileAlert.textContent = message;
+        profileAlert.style.background = type === 'success' ? '#d1fae5' : '#fee2e2';
+        profileAlert.style.color = type === 'success' ? '#065f46' : '#991b1b';
+        profileAlert.style.display = 'block';
+    }
+</script>
+<style>
+    .field-error {
+        color: #ef4444;
+        display: none;
+        font-size: 0.78rem;
+        margin-top: 4px;
+    }
+</style>
+</body>
+</html>
