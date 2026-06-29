@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Edu Next V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../static/css/fcms.css">
+</head>
+<body class="auth-body">
+
+<div class="auth-page">
+    <section class="auth-left">
+        <div class="auth-logo">
+            <div class="auth-logo-icon"><i data-lucide="book-open"></i></div>
+            <div>
+                <h2>FCMS</h2>
+                <p>Flipped Classroom</p>
+            </div>
+        </div>
+
+        <div class="auth-hero">
+            <div class="hero-card">
+                <div class="hero-board">
+                    <div class="hero-lines">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="hero-small-line orange"></div>
+                    <div class="hero-small-line white"></div>
+                    <div class="hero-ai"><i data-lucide="zap"></i></div>
+                </div>
+
+                <div class="hero-students">
+                    <div class="student-avatar blue"></div>
+                    <div class="student-avatar purple"></div>
+                    <div class="student-avatar green"></div>
+                    <div class="student-avatar yellow"></div>
+                </div>
+
+                <h1>Learning, Reimagined</h1>
+                <p>Watch lectures at your own pace. Come to class ready to create, collaborate, and go deeper.</p>
+            </div>
+
+            <div class="floating-card top">
+                <span class="dot green"></span>
+                <div>
+                    <strong>AI Tutor Active</strong>
+                    <p>24/7 learning support</p>
+                </div>
+            </div>
+
+            <div class="floating-card bottom">
+                <span class="dot orange"></span>
+                <div>
+                    <strong>92% Engagement</strong>
+                    <p>This semester</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-pills">
+            <span><i data-lucide="book-open"></i> Self-paced Videos</span>
+            <span><i data-lucide="zap"></i> AI-powered Quizzes</span>
+            <span><i data-lucide="users"></i> Live Collaboration</span>
+        </div>
+
+        <div class="auth-stats">
+            <div><strong>12K+</strong><p>Active Students</p></div>
+            <div><strong>480</strong><p>Courses</p></div>
+            <div><strong>98%</strong><p>Satisfaction</p></div>
+        </div>
+    </section>
+
+    <section class="auth-right">
+        <div class="auth-card">
+            <div class="auth-mobile-logo">
+                <div class="auth-logo-icon"><i data-lucide="book-open"></i></div>
+                <strong>FCMS</strong>
+            </div>
+
+            <div class="auth-switch">
+                <a class="active" th:href="@{/login}">Sign In</a>
+                <a th:href="@{/register}">Create Account</a>
+            </div>
+
+            <div class="auth-title">
+                <h1>Welcome back</h1>
+                <p>Sign in to continue your learning journey</p>
+            </div>
+
+            <div class="role-tabs">
+                <label>
+                    <input type="radio" name="loginRole" value="STUDENT" checked>
+                    <span><i data-lucide="graduation-cap"></i> Student</span>
+                </label>
+                <label>
+                    <input type="radio" name="loginRole" value="TEACHER">
+                    <span><i data-lucide="users"></i> Teacher</span>
+                </label>
+            </div>
+
+            <!-- Nút này trigger OAuth2 flow — Spring Security tự redirect đến Google -->
+            <a href="/oauth2/authorization/google" class="google-btn">
+                <span class="google-icon">G</span>
+                Continue with Google
+            </a>
+
+            <div class="divider"><span></span><p>or continue with</p><span></span></div>
+
+            <!-- Thông báo lỗi -->
+            <div id="loginAlert" style="display:none; padding:10px 14px; border-radius:10px;
+                 font-size:0.875rem; margin-bottom:1rem; background:#fee2e2; color:#991b1b;
+                 border:1px solid #fca5a533;"></div>
+
+            <form id="loginForm" class="auth-form" novalidate>
+                <input type="hidden" name="role" id="selectedRole" value="STUDENT">
+
+                <div class="form-group">
+                    <label>Email address</label>
+                    <input id="loginEmail" type="email" name="email" placeholder="you@school.edu" required>
+                </div>
+
+                <div class="form-group password-field">
+                    <label>Password</label>
+                    <input id="loginPassword" type="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" data-toggle-password="loginPassword"><i data-lucide="eye"></i></button>
+                </div>
+
+                <div class="form-row">
+                    <label class="remember"><input type="checkbox" name="rememberMe"><span>Remember me</span></label>
+                    <a href="/forgot-password">Forgot password?</a>
+                </div>
+
+                <button class="auth-submit" type="submit" id="loginBtn">Sign In <i data-lucide="chevron-right"></i></button>
+            </form>
+
+            <div class="demo-box">
+                <span></span>
+                <div>
+                    <strong>Demo access</strong>
+                    <p>Teacher demo opens Teacher Dashboard. Student demo opens Learning Path.</p>
+                </div>
+            </div>
+
+            <p class="auth-bottom-text">Don’t have an account? <a th:href="@{/register}">Sign up free</a></p>
+        </div>
+    </section>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script th:src="@{/js/fcms.js}" src="../static/js/fcms.js"></script>
+<script>
+    // Sync radio → hidden field (giữ lại để compat)
+    const roleRadios = document.querySelectorAll('input[name="loginRole"]');
+    const selectedRole = document.getElementById('selectedRole');
+    roleRadios.forEach(radio => radio.addEventListener('change', function () { selectedRole.value = this.value; }));
+
+    // ─── Login form: gọi REST API ─────────────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const alert  = document.getElementById('loginAlert');
+        const btn    = document.getElementById('loginBtn');
+        alert.style.display = 'none';
+
+        const email    = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+            alert.textContent    = 'Please enter email and password.';
+            alert.style.display  = 'block';
+            return;
+        }
+
+        btn.disabled    = true;
+        btn.textContent = 'Signing in...';
+
+        try {
+            const res  = await fetch('/api/auth/login', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                window.location.href = '/dashboard';
+            } else {
+                alert.textContent   = '❌ ' + (data.message || 'Invalid email or password.');
+                alert.style.display = 'block';
+            }
+        } catch (err) {
+            alert.textContent   = '❌ Network error. Please try again.';
+            alert.style.display = 'block';
+        } finally {
+            btn.disabled  = false;
+            btn.innerHTML = 'Sign In <i data-lucide="chevron-right"></i>';
+            lucide.createIcons();
+        }
+    });
+</script>
+</body>
+</html>
