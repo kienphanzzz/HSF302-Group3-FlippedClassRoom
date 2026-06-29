@@ -107,6 +107,25 @@
     .question-revealed {
       border-left: 6px solid #64748b !important;
     }
+    .answer-radio {
+      display: none;
+    }
+    .answer-option {
+      display: block;
+      padding: 14px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .answer-radio:checked + .answer-option {
+      border-color: #2563eb;
+      background: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
   </style>
 </head>
 <body>
@@ -164,7 +183,7 @@
           <div class="msg-avatar">U</div>
           <div class="bubble">
             <div class="small muted mb-1" style="color: rgba(255, 255, 255, 0.7); font-weight: 700;">Instructions Submitted:</div>
-            <p class="mb-0" style="font-weight: 600;" th:text="${practiceSession.customPrompt}"></p>
+            <p class="mb-0" style="font-weight: 600;" th:text="${!#strings.isEmpty(practiceSession.customPrompt) ? practiceSession.customPrompt : 'Generate practice questions from this learning material.'}"></p>
           </div>
         </div>
 
@@ -181,20 +200,20 @@
                     <i data-lucide="activity" style="width:16px;height:16px;"></i> Progress Summary
                   </h3>
                   <div class="small text-muted" style="font-size:12.5px;">
-                    Answered: <strong th:text="${answeredCount} + ' / ' + ${practiceSession.totalQuestions}">0/5</strong> &middot; 
+                    Answered: <strong th:text="|${answeredCount} / ${practiceSession.totalQuestions}|">0/5</strong> &middot; 
                     Correct: <strong class="text-green" th:text="${correctCount}">0</strong> &middot; 
-                    Accuracy: <strong class="text-primary" th:text="${accuracy} + '%'">0%</strong> &middot;
+                    Accuracy: <strong class="text-primary" th:text="|${accuracy}%|">0%</strong> &middot;
                     Revealed: <strong class="text-accent" th:text="${revealedCount}">0</strong>
                   </div>
                 </div>
                 
-                <form th:action="@{/student/ai-practice/{sessionId}/finish(sessionId=${practiceSession.practiceSessionId})}" method="POST" th:if="${!completed}">
+                <form th:action="@{/student/ai-practice/{sessionId}/finish(sessionId=${practiceSession.practiceSessionId})}" method="POST" th:if="${completed == false}">
                   <button type="submit" class="btn btn-primary btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 16px;">
                     <i data-lucide="check-square" style="width:16px;height:16px;"></i> Finish Practice
                   </button>
                 </form>
 
-                <div th:if="${completed}">
+                <div th:if="${completed == true}">
                   <a th:href="@{/student/ai-practice/{sessionId}/result(sessionId=${practiceSession.practiceSessionId})}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 16px;">
                     <i data-lucide="award" style="width:16px;height:16px;"></i> View Result Dashboard
                   </a>
@@ -214,52 +233,62 @@
             
             <!-- Non-linear Questions Cards List -->
             <div class="flex flex-col gap-4" style="display: flex; flex-direction: column; gap: 16px;">
-              <div class="question-card" th:each="q, stat : ${questions}" th:id="'question-' + ${q.practiceQuestionId}"
-                   th:classappend="${q.statusClass}">
+              <div class="question-card" th:each="q, stat : ${questions}" th:id="|question-${q.practiceQuestionId}|" th:classappend="${q.statusClass}">
                 
                 <div class="flex items-center justify-between mb-2" style="display: flex; justify-content: space-between; align-items: center;">
-                  <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
+                  <span class="tag tag-primary" th:text="|Question ${stat.index + 1}|">Question 1</span>
                   
                   <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
-                    <span class="graded-badge correct" th:if="${q.isCorrect != null && q.isCorrect}"><i data-lucide="check" style="width:13px;height:13px;"></i> Correct</span>
-                    <span class="graded-badge incorrect" th:if="${q.isCorrect != null && !q.isCorrect}"><i data-lucide="x" style="width:13px;height:13px;"></i> Incorrect</span>
-                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${Boolean.TRUE.equals(q.revealed)}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
+                    <span class="graded-badge correct" th:if="${q.isCorrect == true}"><i data-lucide="check" style="width:13px;height:13px;"></i> Đúng</span>
+                    <span class="graded-badge incorrect" th:if="${q.isCorrect == false}"><i data-lucide="x" style="width:13px;height:13px;"></i> Sai</span>
+                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.revealed == true}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
                     <span class="small muted" th:text="${q.questionType}" style="font-size: 12px; color:#64748b;">MCQ</span>
                   </div>
                 </div>
 
                 <p class="mb-3" style="font-weight: 750; white-space: pre-line; line-height: 1.5; font-size:14.5px; color: var(--text);" th:text="${q.questionContent}">Question Content...</p>
 
-                <!-- MCQ Options List (options highlighted if correct / revealed) -->
+                <!-- MCQ Options List -->
                 <div class="options-grid" th:if="${q.questionType == 'MCQ'}">
-                  <div class="option-item" th:if="${q.optionA != null && !q.optionA.trim().isEmpty()}" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'A'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'A'} ? 'background:var(--green); color:#fff;' : ''">A</span> <span th:text="${q.optionA}">Option A</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionA)}">
+                    <span class="option-badge">A</span> <span th:text="${q.optionA}">Option A</span>
                   </div>
-                  <div class="option-item" th:if="${q.optionB != null && !q.optionB.trim().isEmpty()}" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'B'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'B'} ? 'background:var(--green); color:#fff;' : ''">B</span> <span th:text="${q.optionB}">Option B</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionB)}">
+                    <span class="option-badge">B</span> <span th:text="${q.optionB}">Option B</span>
                   </div>
-                  <div class="option-item" th:if="${q.optionC != null && !q.optionC.trim().isEmpty()}" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'C'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'C'} ? 'background:var(--green); color:#fff;' : ''">C</span> <span th:text="${q.optionC}">Option C</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionC)}">
+                    <span class="option-badge">C</span> <span th:text="${q.optionC}">Option C</span>
                   </div>
-                  <div class="option-item" th:if="${q.optionD != null && !q.optionD.trim().isEmpty()}" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'D'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${(q.isCorrect != null || Boolean.TRUE.equals(q.revealed)) && q.correctAnswer == 'D'} ? 'background:var(--green); color:#fff;' : ''">D</span> <span th:text="${q.optionD}">Option D</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionD)}">
+                    <span class="option-badge">D</span> <span th:text="${q.optionD}">Option D</span>
                   </div>
                 </div>
 
                 <!-- Input Form (only show if not completed and (unanswered or incorrect) and not revealed) -->
-                <div th:if="${!completed && (q.isCorrect == null || !q.isCorrect) && !Boolean.TRUE.equals(q.revealed)}" class="mt-3 p-3" style="border-radius:12px; border:1px solid var(--border); background-color: #f8fafc; margin-top:12px;">
+                <div th:if="${completed == false && (q.isCorrect == null || q.isCorrect == false) && q.revealed != true}" class="mt-3 p-3" style="border-radius:12px; border:1px solid var(--border); background-color: #f8fafc; margin-top:12px;">
                   <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/answer(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST">
                     <div class="form-group mb-2">
-                      <label class="label small" style="font-weight:700; margin-bottom:4px;" th:text="${q.isCorrect != null && !q.isCorrect} ? 'Try Again: Your Answer' : 'Your Answer'">Your Answer</label>
+                      <label class="label small" style="font-weight:700; margin-bottom:4px;" th:text="${q.isCorrect == false} ? 'Try Again: Your Answer' : 'Your Answer'">Your Answer</label>
                       
-                      <!-- MCQ select -->
-                      <select name="studentAnswer" class="composer-select" required th:if="${q.questionType == 'MCQ'}">
-                        <option value="">-- Choose Answer --</option>
-                        <option value="A" th:text="'A: ' + ${q.optionA}">A</option>
-                        <option value="B" th:text="'B: ' + ${q.optionB}">B</option>
-                        <option value="C" th:text="'C: ' + ${q.optionC}">C</option>
-                        <option value="D" th:text="'D: ' + ${q.optionD}">D</option>
-                      </select>
+                      <!-- MCQ Radio Card Options -->
+                      <div class="mcq-options-container" th:if="${q.questionType == 'MCQ'}" style="display:flex; flex-direction:column; gap:8px; margin-top:8px; margin-bottom:12px;">
+                        <div th:if="${!#strings.isEmpty(q.optionA)}">
+                          <input class="answer-radio" type="radio" name="studentAnswer" value="A" th:id="|q${q.practiceQuestionId}A|" required>
+                          <label class="answer-option" th:for="|q${q.practiceQuestionId}A|" th:text="|A. ${q.optionA}|"></label>
+                        </div>
+                        <div th:if="${!#strings.isEmpty(q.optionB)}">
+                          <input class="answer-radio" type="radio" name="studentAnswer" value="B" th:id="|q${q.practiceQuestionId}B|" required>
+                          <label class="answer-option" th:for="|q${q.practiceQuestionId}B|" th:text="|B. ${q.optionB}|"></label>
+                        </div>
+                        <div th:if="${!#strings.isEmpty(q.optionC)}">
+                          <input class="answer-radio" type="radio" name="studentAnswer" value="C" th:id="|q${q.practiceQuestionId}C|" required>
+                          <label class="answer-option" th:for="|q${q.practiceQuestionId}C|" th:text="|C. ${q.optionC}|"></label>
+                        </div>
+                        <div th:if="${!#strings.isEmpty(q.optionD)}">
+                          <input class="answer-radio" type="radio" name="studentAnswer" value="D" th:id="|q${q.practiceQuestionId}D|" required>
+                          <label class="answer-option" th:for="|q${q.practiceQuestionId}D|" th:text="|D. ${q.optionD}|"></label>
+                        </div>
+                      </div>
 
                       <!-- TRUE_FALSE select -->
                       <select name="studentAnswer" class="composer-select" required th:if="${q.questionType == 'TRUE_FALSE'}">
@@ -273,23 +302,30 @@
                     </div>
 
                     <div style="display: flex; gap: 8px; margin-top: 8px;">
-                      <button type="submit" class="btn btn-primary btn-sm flex-1"><i data-lucide="check"></i> Check Answer</button>
+                      <button type="submit" class="btn btn-primary btn-sm flex-1"><i data-lucide="check"></i> Kiểm tra đáp án</button>
                     </div>
                   </form>
 
                   <!-- Reveal Answer Form (Un-nested Sibling Form) -->
                   <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/reveal(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST" style="margin-top: 8px;">
-                    <button type="submit" class="btn btn-outline btn-sm w-full"><i data-lucide="eye"></i> Reveal Answer</button>
+                    <button type="submit" class="btn btn-outline btn-sm w-full"><i data-lucide="eye"></i> Hiện đáp án</button>
                   </form>
                 </div>
 
                 <!-- Feedback area (show if answered or revealed) -->
-                <div th:if="${(q.studentAnswer != null && !q.studentAnswer.isEmpty()) || Boolean.TRUE.equals(q.revealed)}" style="margin-top:12px;">
+                <div th:if="${!#strings.isEmpty(q.studentAnswer) or q.revealed == true}" style="margin-top:12px;">
+                  <!-- Graded Badge inside Feedback Block -->
+                  <div class="mb-2">
+                    <span class="graded-badge correct" th:if="${q.isCorrect == true}"><i data-lucide="check" style="width:13px;height:13px;"></i> Đúng</span>
+                    <span class="graded-badge incorrect" th:if="${q.isCorrect == false}"><i data-lucide="x" style="width:13px;height:13px;"></i> Sai</span>
+                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.revealed == true}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
+                  </div>
+
                   <!-- Answer comparison -->
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border);" class="mb-3">
                     <div class="small">
                       <span class="muted block small font-bold" style="font-size:11px; color:#64748b;">Your Answer:</span>
-                      <strong th:text="${q.studentAnswer != null && !q.studentAnswer.isEmpty() ? q.studentAnswer : '(Not answered)'}">A</strong>
+                      <strong th:text="${!#strings.isEmpty(q.studentAnswer) ? q.studentAnswer : '(Not answered)'}">A</strong>
                     </div>
                     <div class="small">
                       <span class="muted block small font-bold" style="font-size:11px; color:#64748b;">Correct Answer:</span>
@@ -312,26 +348,28 @@
                     <!-- Chat Logs -->
                     <div class="chats-thread mb-3" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 12px;">
                       <!-- Loop through chats directly bound to this question -->
-                      <div th:each="chat : ${q.chats}" class="flex flex-col gap-1" style="display:flex; flex-direction:column; gap:4px;">
-                        <div class="user-msg p-2 bg-primary-light" style="border-radius:8px; align-self:flex-end; max-width:85%; font-size:12px; border:1px solid rgba(26, 115, 232, 0.1); padding:8px; background-color: #e8f0fe; margin-left: auto;">
-                          <strong style="color:var(--primary);">You:</strong> <span th:text="${chat.userMessage}">Question...</span>
-                        </div>
-                        <div class="ai-msg p-2 bg-white" style="border-radius:8px; align-self:flex-start; max-width:85%; font-size:12px; border:1px solid var(--border); line-height:1.5; white-space: pre-line; padding:8px; background-color: #ffffff; margin-right: auto;">
-                          <strong style="color:var(--purple);">AI:</strong> <span th:text="${chat.aiResponse}">Explanation...</span>
+                      <div th:if="${q.chats != null and !#lists.isEmpty(q.chats)}">
+                        <div th:each="chat : ${q.chats}" class="flex flex-col gap-1" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 10px;">
+                          <div class="user-msg p-2 bg-primary-light" style="border-radius:8px; align-self:flex-end; max-width:85%; font-size:12px; border:1px solid rgba(26, 115, 232, 0.1); padding:8px; background-color: #e8f0fe; margin-left: auto;">
+                            <strong style="color:var(--primary);">You:</strong> <span th:text="${chat.userMessage}">Question...</span>
+                          </div>
+                          <div class="ai-msg p-2 bg-white" style="border-radius:8px; align-self:flex-start; max-width:85%; font-size:12px; border:1px solid var(--border); line-height:1.5; white-space: pre-line; padding:8px; background-color: #ffffff; margin-right: auto;">
+                            <strong style="color:var(--purple);">AI:</strong> <span th:text="${chat.aiResponse}">Explanation...</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div th:if="${#lists.isEmpty(q.chats)}" class="small muted text-center py-2" style="text-align: center; color:#64748b; font-size:12px; padding: 8px 0;">
+                      <div th:if="${q.chats == null or #lists.isEmpty(q.chats)}" class="small muted text-center py-2" style="text-align: center; color:#64748b; font-size:12px; padding: 8px 0;">
                         No follow-up questions asked yet.
                       </div>
                     </div>
 
                     <!-- Ask AI Form (Only if not completed) -->
-                    <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/ask(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST" th:if="${!completed}">
+                    <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/ask(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST" th:if="${completed == false}">
                       <div class="form-group mb-2" style="margin-bottom:8px;">
-                        <textarea name="followUpPrompt" class="composer-textarea" rows="2" style="border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fff; font-size:12.5px; width:100%; box-sizing: border-box;" placeholder="Ask AI about this question, e.g. Why is answer A correct? Explain more clearly..." required></textarea>
+                        <textarea name="followUpPrompt" class="composer-textarea" rows="2" style="border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fff; font-size:12.5px; width:100%; box-sizing: border-box;" placeholder="Hỏi AI về câu này, ví dụ: Tại sao đáp án A đúng?" required></textarea>
                       </div>
-                      <button type="submit" class="btn btn-soft btn-sm w-full" style="width:100%;"><i data-lucide="send" style="width:12px;height:12px;"></i> Ask AI</button>
+                      <button type="submit" class="btn btn-soft btn-sm w-full" style="width:100%;"><i data-lucide="send" style="width:12px;height:12px;"></i> Hỏi AI</button>
                     </form>
                   </div>
                 </div>

@@ -151,16 +151,16 @@
           <div>
             <span class="small font-bold text-uppercase" style="color: rgba(255,255,255,0.8); display:block; margin-bottom: 4px;">Practice Finished</span>
             <h2 class="h1 font-bold text-white mb-1" style="font-size:24px;">Practice Session Completed!</h2>
-            <p class="small mb-0" style="color: rgba(255,255,255,0.95);" th:text="'Source: ' + ${practiceSession.sourceTitle}"></p>
+            <p class="small mb-0" style="color: rgba(255,255,255,0.95);" th:text="|Source: ${practiceSession.sourceTitle}|"></p>
           </div>
           <div class="flex items-center gap-4">
             <div class="text-center">
               <span class="small text-uppercase block" style="font-size:10px; color:rgba(255,255,255,0.75);">Correct</span>
-              <strong style="font-size:24px;" th:text="${correctCount} + ' / ' + ${practiceSession.totalQuestions}">3/5</strong>
+              <strong style="font-size:24px;" th:text="|${correctCount} / ${practiceSession.totalQuestions}|">3/5</strong>
             </div>
             <div class="text-center" style="border-left: 1px solid rgba(255,255,255,0.25); padding-left:16px;">
               <span class="small text-uppercase block" style="font-size:10px; color:rgba(255,255,255,0.75);">Accuracy</span>
-              <strong style="font-size:24px;" th:text="${accuracy} + '%'">60%</strong>
+              <strong style="font-size:24px;" th:text="|${accuracy}%|">60%</strong>
             </div>
             <div class="text-center" style="border-left: 1px solid rgba(255,255,255,0.25); padding-left:16px;">
               <span class="small text-uppercase block" style="font-size:10px; color:rgba(255,255,255,0.75);">Revealed</span>
@@ -188,13 +188,13 @@
                    th:classappend="${q.statusClass}">
                 
                 <div class="flex items-center justify-between mb-2">
-                  <span class="tag tag-primary" th:text="'Question ' + ${stat.index + 1}">Question 1</span>
+                  <span class="tag tag-primary" th:text="|Question ${stat.index + 1}|">Question 1</span>
                   
                   <div class="flex items-center gap-2">
-                    <span class="graded-badge correct" th:if="${q.isCorrect != null && q.isCorrect}"><i data-lucide="check" style="width:13px;height:13px;"></i> Correct</span>
-                    <span class="graded-badge incorrect" th:if="${q.isCorrect != null && !q.isCorrect}"><i data-lucide="x" style="width:13px;height:13px;"></i> Incorrect</span>
-                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${Boolean.TRUE.equals(q.revealed)}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
-                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.studentAnswer == null && !Boolean.TRUE.equals(q.revealed)}"><i data-lucide="minus" style="width:13px;height:13px;"></i> Unanswered</span>
+                    <span class="graded-badge correct" th:if="${q.isCorrect == true}"><i data-lucide="check" style="width:13px;height:13px;"></i> Đúng</span>
+                    <span class="graded-badge incorrect" th:if="${q.isCorrect == false}"><i data-lucide="x" style="width:13px;height:13px;"></i> Sai</span>
+                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.revealed == true}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
+                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${#strings.isEmpty(q.studentAnswer) and q.revealed != true}"><i data-lucide="minus" style="width:13px;height:13px;"></i> Chưa trả lời</span>
                   </div>
                 </div>
 
@@ -202,17 +202,17 @@
 
                 <!-- MCQ Options View -->
                 <div class="options-grid" th:if="${q.questionType == 'MCQ'}">
-                  <div class="option-item" th:style="${q.correctAnswer == 'A'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${q.correctAnswer == 'A'} ? 'background:var(--green); color:#fff;' : ''">A</span> <span th:text="${q.optionA}">Option A</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionA)}">
+                    <span class="option-badge">A</span> <span th:text="${q.optionA}">Option A</span>
                   </div>
-                  <div class="option-item" th:style="${q.correctAnswer == 'B'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${q.correctAnswer == 'B'} ? 'background:var(--green); color:#fff;' : ''">B</span> <span th:text="${q.optionB}">Option B</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionB)}">
+                    <span class="option-badge">B</span> <span th:text="${q.optionB}">Option B</span>
                   </div>
-                  <div class="option-item" th:style="${q.correctAnswer == 'C'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${q.correctAnswer == 'C'} ? 'background:var(--green); color:#fff;' : ''">C</span> <span th:text="${q.optionC}">Option C</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionC)}">
+                    <span class="option-badge">C</span> <span th:text="${q.optionC}">Option C</span>
                   </div>
-                  <div class="option-item" th:style="${q.correctAnswer == 'D'} ? 'border-color:var(--green); background:#f3faf5;' : ''">
-                    <span class="option-badge" th:style="${q.correctAnswer == 'D'} ? 'background:var(--green); color:#fff;' : ''">D</span> <span th:text="${q.optionD}">Option D</span>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionD)}">
+                    <span class="option-badge">D</span> <span th:text="${q.optionD}">Option D</span>
                   </div>
                 </div>
 
@@ -220,7 +220,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border);" class="mb-3">
                   <div class="small">
                     <span class="muted block small font-bold">Your Answer:</span>
-                    <strong th:text="${q.studentAnswer != null && !q.studentAnswer.isEmpty() ? q.studentAnswer : '(Not answered)'}">A</strong>
+                    <strong th:text="${!#strings.isEmpty(q.studentAnswer) ? q.studentAnswer : '(Not answered)'}">A</strong>
                   </div>
                   <div class="small">
                     <span class="muted block small font-bold">Correct Answer:</span>
@@ -238,6 +238,7 @@
 
             <!-- Footer navigation -->
             <div class="flex items-center gap-3 mt-4" style="border-top:1px solid var(--border); padding-top: 16px;">
+              <a th:href="@{/student/ai-practice/{sessionId}(sessionId=${practiceSession.practiceSessionId})}" class="btn btn-soft btn-sm"><i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Practice Session</a>
               <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm flex-1"><i data-lucide="zap" style="width: 14px; height: 14px;"></i> Generate New Practice</a>
               <a th:href="@{/student/ai-practice/history}" class="btn btn-outline btn-sm"><i data-lucide="history" style="width: 14px; height: 14px;"></i> View History</a>
             </div>

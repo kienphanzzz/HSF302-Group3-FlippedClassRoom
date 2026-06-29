@@ -267,7 +267,38 @@ public class StudentPracticeController {
 
     @GetMapping("/ai-practice/history")
     public String getPracticeHistory(Model model) {
-        List<PracticeSession> history = practiceService.getSessionsForStudent(demoStudentId);
+        List<PracticeSession> sessions = practiceService.getSessionsForStudent(demoStudentId);
+        List<PracticeSessionHistoryDto> history = new java.util.ArrayList<>();
+        for (PracticeSession session : sessions) {
+            List<PracticeQuestion> questions = practiceService.getQuestionsForSession(session.getPracticeSessionId());
+            long answeredCount = questions.stream()
+                    .filter(q -> q.getStudentAnswer() != null && !q.getStudentAnswer().trim().isEmpty())
+                    .count();
+            long revealedCount = questions.stream()
+                    .filter(q -> Boolean.TRUE.equals(q.getRevealed()))
+                    .count();
+            long correctCount = questions.stream()
+                    .filter(q -> Boolean.TRUE.equals(q.getIsCorrect()))
+                    .count();
+            int accuracy = 0;
+            if (answeredCount > 0) {
+                accuracy = (int) Math.round((double) correctCount * 100.0 / answeredCount);
+            }
+            
+            // Fallbacks for display
+            if (session.getDifficulty() == null) session.setDifficulty("MEDIUM");
+            if (session.getQuestionType() == null) session.setQuestionType("MCQ");
+            if (session.getSourceTitle() == null || session.getSourceTitle().trim().isEmpty()) {
+                String fallback = session.getOriginalFileName() != null ? session.getOriginalFileName() : "Uploaded material";
+                session.setSourceTitle(fallback);
+            }
+            if (session.getCustomPrompt() == null || session.getCustomPrompt().trim().isEmpty()) {
+                session.setCustomPrompt("Generate practice questions from this learning material.");
+            }
+
+            history.add(new PracticeSessionHistoryDto(session, answeredCount, correctCount, revealedCount, accuracy));
+        }
+
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("history", history);
         return "student/ai-practice/history";
@@ -299,5 +330,35 @@ public class StudentPracticeController {
     public String handleMaxSizeException(RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("errorMessage", "Uploaded file is too large. Please upload a file under 50MB or paste the lesson text instead.");
         return "redirect:/student/ai-practice";
+    }
+
+    public static class PracticeSessionHistoryDto {
+        private final PracticeSession session;
+        private final long answeredCount;
+        private final long correctCount;
+        private final long revealedCount;
+        private final int accuracy;
+
+        public PracticeSessionHistoryDto(PracticeSession session, long answeredCount, long correctCount, long revealedCount, int accuracy) {
+            this.session = session;
+            this.answeredCount = answeredCount;
+            this.correctCount = correctCount;
+            this.revealedCount = revealedCount;
+            this.accuracy = accuracy;
+        }
+
+        public Long getPracticeSessionId() { return session.getPracticeSessionId(); }
+        public String getSourceTitle() { return session.getSourceTitle(); }
+        public String getSourceType() { return session.getSourceType(); }
+        public String getCustomPrompt() { return session.getCustomPrompt(); }
+        public String getDifficulty() { return session.getDifficulty(); }
+        public String getQuestionType() { return session.getQuestionType(); }
+        public Integer getTotalQuestions() { return session.getTotalQuestions(); }
+        public String getStatus() { return session.getStatus(); }
+        public java.time.LocalDateTime getCreatedAt() { return session.getCreatedAt(); }
+        public long getAnsweredCount() { return answeredCount; }
+        public long getCorrectCount() { return correctCount; }
+        public long getRevealedCount() { return revealedCount; }
+        public int getAccuracy() { return accuracy; }
     }
 }
