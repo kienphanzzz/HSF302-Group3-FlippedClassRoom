@@ -146,7 +146,7 @@
                 <div class="form-group password-field">
                     <label for="registerPassword">Password</label>
                     <input id="registerPassword" type="password" name="password"
-                           placeholder="At least 6 characters" required autocomplete="new-password">
+                           placeholder="Abc@123" minlength="6" maxlength="100" required autocomplete="new-password">
                     <button type="button" class="password-toggle"
                             data-toggle-password="registerPassword">
                         <i data-lucide="eye"></i>
@@ -191,6 +191,8 @@
     const form       = document.getElementById('registerForm');
     const submitBtn  = document.getElementById('submitBtn');
     const alertBox   = document.getElementById('alertBox');
+    const passwordPattern = /^(?=.{6,100}$)(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9])[A-Z].*$/;
+    const passwordRuleMessage = 'Password must start with an uppercase letter and include lowercase letter, number, and special character';
 
     // ─── Role switch handler ───────────────────────────────────────────────
     const roleHints = {
@@ -253,8 +255,8 @@
         if (!password) {
             showFieldError('err-password', 'Password is required');
             hasError = true;
-        } else if (password.length < 6) {
-            showFieldError('err-password', 'Password must be at least 6 characters');
+        } else if (!passwordPattern.test(password)) {
+            showFieldError('err-password', passwordRuleMessage);
             hasError = true;
         }
 

@@ -21,6 +21,7 @@ public class SecurityConfig {
             "/css/**",
             "/js/**",
             "/images/**",
+            "/uploads/**",
             "/api/auth/**",
             "/oauth2/**",
             "/login/oauth2/**"
