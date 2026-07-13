@@ -1,6 +1,8 @@
 package com.example.fcms.dto.user;
 
 import jakarta.validation.constraints.NotBlank;
+
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class UpdateProfileRequest {
@@ -10,6 +12,7 @@ public class UpdateProfileRequest {
     private String fullName;
 
     @Size(max = 20, message = "Phone max 20 characters")
+    @Pattern(regexp = "^$|\\d{10,11}", message = "Phone must contain 10 to 11 digits")
     private String phone;
 
     @Size(max = 500, message = "Bio max 500 characters")

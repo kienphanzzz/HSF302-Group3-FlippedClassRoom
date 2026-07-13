@@ -90,7 +90,14 @@
 
         <!-- Profile box + Logout -->
         <div class="profile-box">
-            <div class="avatar"
+            <img th:if="${!#strings.isEmpty(currentUser.avatarUrl)}"
+                 th:src="${currentUser.avatarUrl}"
+                 alt="Avatar"
+                 data-user-avatar-img
+                 style="width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0;">
+            <div th:if="${#strings.isEmpty(currentUser.avatarUrl)}"
+                 class="avatar"
+                 data-user-avatar-fallback
                  th:classappend="${session.currentUserRole == 'STUDENT'} ? 'student'"
                  th:text="${#strings.substring(currentUser.fullName, 0, 1)}">A</div>
             <div style="flex:1; min-width:0;">
@@ -138,7 +145,14 @@
                 <div style="position:relative;">
                     <button class="icon-btn" onclick="toggleUserMenu()" id="userMenuBtn"
                             style="gap:6px; width:auto; padding:4px 10px 4px 4px;">
-                        <div class="avatar"
+                        <img th:if="${!#strings.isEmpty(currentUser.avatarUrl)}"
+                             th:src="${currentUser.avatarUrl}"
+                             alt="Avatar"
+                             data-user-avatar-img
+                             style="width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0;">
+                        <div th:if="${#strings.isEmpty(currentUser.avatarUrl)}"
+                             class="avatar"
+                             data-user-avatar-fallback
                              th:classappend="${session.currentUserRole == 'STUDENT'} ? 'student'"
                              th:text="${#strings.substring(currentUser.fullName, 0, 1)}"
                              style="width:30px; height:30px; font-size:11px;">A</div>

@@ -53,7 +53,7 @@
             <div class="section-title">Edit Profile</div>
             <div id="profileAlert" style="display:none; padding:10px 14px; border-radius:10px; font-size:0.85rem; margin-bottom:14px;"></div>
 
-            <form id="profileForm">
+            <form id="profileForm" enctype="multipart/form-data">
                 <div class="form-group mb-3">
                     <label>Full name</label>
                     <input id="fullName" class="input" th:value="${currentUser.fullName}" maxlength="100" required>
@@ -62,14 +62,31 @@
 
                 <div class="form-group mb-3">
                     <label>Phone</label>
-                    <input id="phone" class="input" th:value="${currentUser.phone}" maxlength="20" placeholder="Optional">
+                    <input id="phone" class="input" th:value="${currentUser.phone}" maxlength="11" inputmode="numeric" pattern="[0-9]{10,11}" placeholder="Optional">
                     <div class="field-error" id="err-phone"></div>
                 </div>
 
                 <div class="form-group mb-3">
-                    <label>Avatar URL</label>
-                    <input id="avatarUrl" class="input" th:value="${currentUser.avatarUrl}" maxlength="500" placeholder="https://...">
-                    <div class="field-error" id="err-avatarUrl"></div>
+                    <label>Avatar image</label>
+                    <input id="avatarUrl" type="hidden" th:value="${currentUser.avatarUrl}">
+                    <div class="avatar-upload">
+                        <img id="avatarPreview"
+                             th:if="${currentUser.avatarUrl != null}"
+                             th:src="${currentUser.avatarUrl}"
+                             alt="Avatar preview"
+                             class="avatar-preview">
+                        <div id="avatarPreviewFallback"
+                             th:if="${currentUser.avatarUrl == null}"
+                             class="avatar avatar-preview-fallback"
+                             th:classappend="${session.currentUserRole == 'STUDENT'} ? 'student'"
+                             th:text="${#strings.substring(currentUser.fullName, 0, 1)}">A</div>
+                        <label class="btn btn-outline avatar-file-btn" for="avatarFile">
+                            <i data-lucide="image-plus" style="width:15px;"></i> Choose image
+                        </label>
+                        <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                        <span id="avatarFileName" class="muted small">No new image selected</span>
+                    </div>
+                    <div class="field-error" id="err-avatarFile"></div>
                 </div>
 
                 <div class="form-group mb-4">
@@ -94,6 +111,60 @@
     const profileForm = document.getElementById('profileForm');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     const profileAlert = document.getElementById('profileAlert');
+    const avatarFileInput = document.getElementById('avatarFile');
+    const avatarFileName = document.getElementById('avatarFileName');
+    const phoneInput = document.getElementById('phone');
+    const maxAvatarSize = 5 * 1024 * 1024;
+    const allowedAvatarTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedAvatarExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    let currentAvatarPreviewUrl = null;
+
+    avatarFileInput.addEventListener('change', () => {
+        const file = avatarFileInput.files[0];
+        showFieldError('err-avatarFile', '');
+
+        if (!file) {
+            avatarFileName.textContent = 'No new image selected';
+            return;
+        }
+
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (!allowedAvatarExtensions.includes(extension)) {
+            avatarFileInput.value = '';
+            avatarFileName.textContent = 'No new image selected';
+            showFieldError('err-avatarFile', 'Please choose a JPG, PNG, GIF, or WEBP image');
+            return;
+        }
+
+        if (!allowedAvatarTypes.includes(file.type)) {
+            avatarFileInput.value = '';
+            avatarFileName.textContent = 'No new image selected';
+            showFieldError('err-avatarFile', 'Please choose a valid image file');
+            return;
+        }
+
+        if (file.size > maxAvatarSize) {
+            avatarFileInput.value = '';
+            avatarFileName.textContent = 'No new image selected';
+            showFieldError('err-avatarFile', 'Avatar image must be 5MB or smaller');
+            return;
+        }
+
+        avatarFileName.textContent = file.name;
+        const previewUrl = URL.createObjectURL(file);
+        showAvatarPreview(previewUrl);
+        updateLayoutAvatars(previewUrl);
+
+        if (currentAvatarPreviewUrl) {
+            URL.revokeObjectURL(currentAvatarPreviewUrl);
+        }
+        currentAvatarPreviewUrl = previewUrl;
+    });
+
+    phoneInput.addEventListener('input', () => {
+        phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 11);
+        showFieldError('err-phone', '');
+    });
 
     profileForm.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -102,11 +173,26 @@
         const fullName = document.getElementById('fullName').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const avatarUrl = document.getElementById('avatarUrl').value.trim();
+        const avatarFile = avatarFileInput.files[0];
         const bio = document.getElementById('bio').value.trim();
 
         if (!fullName) {
             showFieldError('err-fullName', 'Full name is required');
             return;
+        }
+
+        if (phone && !/^\d{10,11}$/.test(phone)) {
+            showFieldError('err-phone', 'Phone must contain 10 to 11 digits');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('fullName', fullName);
+        formData.append('phone', phone);
+        formData.append('avatarUrl', avatarUrl);
+        formData.append('bio', bio);
+        if (avatarFile) {
+            formData.append('avatarFile', avatarFile);
         }
 
         saveProfileBtn.disabled = true;
@@ -115,13 +201,21 @@
         try {
             const response = await fetch('/api/users/me', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fullName, phone, avatarUrl, bio })
+                body: formData
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json') ? await response.json() : {};
 
             if (response.ok) {
+                if (data.avatarUrl) {
+                    document.getElementById('avatarUrl').value = data.avatarUrl;
+                    updateLayoutAvatars(data.avatarUrl);
+                    if (currentAvatarPreviewUrl) {
+                        URL.revokeObjectURL(currentAvatarPreviewUrl);
+                        currentAvatarPreviewUrl = null;
+                    }
+                }
                 showProfileAlert('Profile updated successfully. Reloading...', 'success');
                 setTimeout(() => window.location.reload(), 900);
                 return;
@@ -151,12 +245,46 @@
         profileAlert.style.display = 'none';
     }
 
+    function showAvatarPreview(imageUrl) {
+        let preview = document.getElementById('avatarPreview');
+        const fallback = document.getElementById('avatarPreviewFallback');
+
+        if (!preview) {
+            preview = document.createElement('img');
+            preview.id = 'avatarPreview';
+            preview.alt = 'Avatar preview';
+            preview.className = 'avatar-preview';
+            fallback.replaceWith(preview);
+        }
+
+        preview.src = imageUrl;
+    }
+
+    function updateLayoutAvatars(imageUrl) {
+        document.querySelectorAll('[data-user-avatar-img]').forEach((image) => {
+            image.src = imageUrl;
+        });
+
+        document.querySelectorAll('[data-user-avatar-fallback]').forEach((fallback) => {
+            const image = document.createElement('img');
+            image.src = imageUrl;
+            image.alt = 'Avatar';
+            image.setAttribute('data-user-avatar-img', '');
+            image.style.width = fallback.style.width || '38px';
+            image.style.height = fallback.style.height || '38px';
+            image.style.borderRadius = '50%';
+            image.style.objectFit = 'cover';
+            image.style.flexShrink = '0';
+            fallback.replaceWith(image);
+        });
+    }
+
     function showFieldError(id, message) {
         const element = document.getElementById(id);
         if (!element) return;
 
         element.textContent = message;
-        element.style.display = 'block';
+        element.style.display = message ? 'block' : 'none';
     }
 
     function showProfileAlert(message, type) {
@@ -172,6 +300,33 @@
         display: none;
         font-size: 0.78rem;
         margin-top: 4px;
+    }
+
+    .avatar-upload {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .avatar-preview,
+    .avatar-preview-fallback {
+        height: 48px;
+        width: 48px;
+    }
+
+    .avatar-preview {
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .avatar-preview-fallback {
+        font-size: 18px;
+    }
+
+    .avatar-file-btn {
+        cursor: pointer;
+        gap: 6px;
     }
 </style>
 </body>

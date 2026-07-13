@@ -18,4 +18,3 @@ public interface ClassRoomRepository extends JpaRepository<ClassRoom, Long> {
 
     boolean existsByClassCode(String classCode);
 }
-

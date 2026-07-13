@@ -18,6 +18,10 @@ public class RegisterRequest {
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, max = 100, message = "Password must be 6-100 characters")
+    @Pattern(
+            regexp = "^(?=.{6,100}$)(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[^A-Za-z0-9])[A-Z].*$",
+            message = "Password must start with an uppercase letter and include lowercase letter, number, and special character"
+    )
     private String password;
 
     @NotBlank(message = "Role is required")

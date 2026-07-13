@@ -23,11 +23,11 @@ public class SecurityConfig {
             "/images/**",
             "/static/**",
             "/student/**",
+            "/uploads/**",
             "/api/auth/**",
             "/oauth2/**",
             "/login/oauth2/**"
     };
-
 
     public SecurityConfig(GoogleLoginSuccessHandler googleLoginSuccessHandler) {
         this.googleLoginSuccessHandler = googleLoginSuccessHandler;
