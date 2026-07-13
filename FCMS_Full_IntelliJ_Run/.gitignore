@@ -1,0 +1,26 @@
+# IntelliJ
+.idea/
+**/.idea/
+*.iml
+**/*.iml
+
+# Maven build
+target/
+**/target/
+
+# Runtime uploaded files
+uploads/
+**/uploads/
+
+# Local secrets
+.env
+**/.env
+application-local.properties
+**/application-local.properties
+src/main/resources/application-local.properties
+**/src/main/resources/application-local.properties
+
+# OS / logs
+.DS_Store
+Thumbs.db
+*.log

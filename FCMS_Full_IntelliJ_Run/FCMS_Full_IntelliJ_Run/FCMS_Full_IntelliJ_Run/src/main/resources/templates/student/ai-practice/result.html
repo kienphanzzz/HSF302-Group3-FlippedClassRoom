@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practice Results - FCMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../../../static/css/fcms.css" />
+  <style>
+    .chat-layout {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .chat-bubble-assistant {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(15, 23, 36, 0.02);
+      flex: 1;
+    }
+    .question-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      background: #fdfdfd;
+      transition: all 0.2s ease;
+    }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 13.5px;
+    }
+    .option-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--secondary);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .banner-settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .setting-tag {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 750;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .graded-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .graded-badge.correct {
+      background: #e6f4ea;
+      color: var(--green);
+    }
+    .graded-badge.incorrect {
+      background: #fdf2f2;
+      color: var(--red);
+    }
+    .question-correct {
+      border-left: 6px solid #22c55e !important;
+    }
+    .question-wrong {
+      border-left: 6px solid #ef4444 !important;
+    }
+    .question-revealed {
+      border-left: 6px solid #64748b !important;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><i data-lucide="book-open"></i></div>
+      <div>
+        <div class="brand-title">FCMS</div>
+        <div class="brand-sub">Student Portal</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a th:href="@{/student/learning-path}"><i data-lucide="book-open"></i> My Learning Path</a>
+      <a th:href="@{/student/classes}"><i data-lucide="grid"></i> Joined Classes</a>
+      <a th:href="@{/student/assignments}"><i data-lucide="clipboard-list"></i> Assignments</a>
+      <a class="active" th:href="@{/student/ai-practice}"><i data-lucide="zap"></i> AI Practice</a>
+      <a th:href="@{/student/progress}"><i data-lucide="bar-chart-2"></i> Progress Dashboard</a>
+    </nav>
+    <div class="profile-box">
+      <div class="avatar student" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
+      <div class="truncate">
+        <div class="profile-name" th:text="${studentName ?: 'Alex Nguyen'}">Alex Nguyen</div>
+        <div class="profile-role">student</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="top-title">Practice Results</div>
+      <div class="switcher">
+        <a th:href="@{/student/ai-practice}">AI Practice Setup</a>
+        <a th:href="@{/student/ai-practice/history}">Practice History</a>
+      </div>
+      <button class="icon-btn relative"><i data-lucide="bell"></i></button>
+      <div class="avatar student" style="width:34px;height:34px" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
+    </header>
+
+    <main class="content">
+      <div class="chat-layout">
+        
+        <!-- Score Card Banner -->
+        <div class="card card-pad bg-primary text-white flex flex-col md:flex-row items-center justify-between gap-4" style="border-radius:20px; box-shadow: var(--shadow);">
+          <div>
+            <span class="small font-bold text-uppercase" style="color: rgba(255,255,255,0.8); display:block; margin-bottom: 4px;">Practice Finished</span>
+            <h2 class="h1 font-bold text-white mb-1" style="font-size:24px;">Practice Session Completed!</h2>
+            <p class="small mb-0" style="color: rgba(255,255,255,0.95);" th:text="|Source: ${practiceSession.sourceTitle}|"></p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-center">
+              <span class="small text-uppercase block" style="font-size:10px; color:rgba(255,255,255,0.75);">Correct</span>
+              <strong style="font-size:24px;" th:text="|${correctCount} / ${practiceSession.totalQuestions}|">3/5</strong>
+            </div>
+            <div class="text-center" style="border-left: 1px solid rgba(255,255,255,0.25); padding-left:16px;">
+              <span class="small text-uppercase block" style="font-size:10px; color:rgba(255,255,255,0.75);">Accuracy</span>
+              <strong style="font-size:24px;" th:text="|${accuracy}%|">60%</strong>
+            </div>
+            <div class="text-center" style="border-left: 1px solid rgba(255,255,255,0.25); padding-left:16px;">
+              <span class="small text-uppercase block" style="font-size:10px; color:rgba(255,255,255,0.75);">Revealed</span>
+              <strong style="font-size:24px;" th:text="${revealedCount}">1</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- assistant response bubble containing summary result -->
+        <div class="msg">
+          <div class="msg-avatar" style="background: var(--purple); color: white;"><i data-lucide="cpu" style="width: 17px; height: 17px;"></i></div>
+          <div class="chat-bubble-assistant">
+            
+            <div class="banner-settings">
+              <span class="setting-tag"><i data-lucide="file-text" style="width:11px;height:11px"></i> <span th:text="${practiceSession.sourceTitle}">Use Case</span></span>
+              <span class="setting-tag"><i data-lucide="tag" style="width:11px;height:11px"></i> <span th:text="${practiceSession.sourceType}">UPLOADED_FILE</span></span>
+              <span class="setting-tag"><i data-lucide="bar-chart" style="width:11px;height:11px"></i> <span th:text="${practiceSession.difficulty}">MEDIUM</span></span>
+              <span class="setting-tag"><i data-lucide="help-circle" style="width:11px;height:11px"></i> <span th:text="${practiceSession.questionType}">MCQ</span></span>
+            </div>
+
+            <h2 class="h2 mb-4" style="font-size: 17px; font-weight: 800; color: var(--primary);">Scored Practice Summary</h2>
+
+            <div class="flex flex-col gap-4">
+              <div class="question-card" th:each="q, stat : ${questions}"
+                   th:classappend="${q.statusClass}">
+                
+                <div class="flex items-center justify-between mb-2">
+                  <span class="tag tag-primary" th:text="|Question ${stat.index + 1}|">Question 1</span>
+                  
+                  <div class="flex items-center gap-2">
+                    <span class="graded-badge correct" th:if="${q.isCorrect == true}"><i data-lucide="check" style="width:13px;height:13px;"></i> Đúng</span>
+                    <span class="graded-badge incorrect" th:if="${q.isCorrect == false}"><i data-lucide="x" style="width:13px;height:13px;"></i> Sai</span>
+                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.revealed == true}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
+                    <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${#strings.isEmpty(q.studentAnswer) and q.revealed != true}"><i data-lucide="minus" style="width:13px;height:13px;"></i> Chưa trả lời</span>
+                  </div>
+                </div>
+
+                <p class="mb-3" style="font-weight: 750; white-space: pre-line; line-height: 1.5;" th:text="${q.questionContent}">Question Content...</p>
+
+                <!-- MCQ Options View -->
+                <div class="options-grid" th:if="${q.questionType == 'MCQ'}">
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionA)}">
+                    <span class="option-badge">A</span> <span th:text="${q.optionA}">Option A</span>
+                  </div>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionB)}">
+                    <span class="option-badge">B</span> <span th:text="${q.optionB}">Option B</span>
+                  </div>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionC)}">
+                    <span class="option-badge">C</span> <span th:text="${q.optionC}">Option C</span>
+                  </div>
+                  <div class="option-item" th:if="${!#strings.isEmpty(q.optionD)}">
+                    <span class="option-badge">D</span> <span th:text="${q.optionD}">Option D</span>
+                  </div>
+                </div>
+
+                <!-- Answer matching display -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border);" class="mb-3">
+                  <div class="small">
+                    <span class="muted block small font-bold">Your Answer:</span>
+                    <strong th:text="${!#strings.isEmpty(q.studentAnswer) ? q.studentAnswer : '(Not answered)'}">A</strong>
+                  </div>
+                  <div class="small">
+                    <span class="muted block small font-bold">Correct Answer:</span>
+                    <strong class="text-green" th:text="${q.correctAnswer}">A</strong>
+                  </div>
+                </div>
+
+                <!-- Explanation -->
+                <div class="p-3" style="background: rgba(26, 115, 232, 0.04); border-radius: 8px; border: 1px dashed rgba(26, 115, 232, 0.2);">
+                  <span class="small font-bold text-primary block mb-1">AI Explanation:</span>
+                  <p class="small mb-0" style="line-height: 1.5; color:#475569;" th:text="${q.explanation}">Explanation content...</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer navigation -->
+            <div class="flex items-center gap-3 mt-4" style="border-top:1px solid var(--border); padding-top: 16px;">
+              <a th:href="@{/student/ai-practice/{sessionId}(sessionId=${practiceSession.practiceSessionId})}" class="btn btn-soft btn-sm"><i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Practice Session</a>
+              <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm flex-1"><i data-lucide="zap" style="width: 14px; height: 14px;"></i> Generate New Practice</a>
+              <a th:href="@{/student/ai-practice/history}" class="btn btn-outline btn-sm"><i data-lucide="history" style="width: 14px; height: 14px;"></i> View History</a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script th:src="@{/js/fcms.js}" src="../../../static/js/fcms.js"></script>
+</body>
+</html>
