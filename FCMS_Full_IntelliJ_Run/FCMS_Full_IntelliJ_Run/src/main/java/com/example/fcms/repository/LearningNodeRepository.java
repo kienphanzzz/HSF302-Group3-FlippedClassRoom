@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface LearningNodeRepository extends JpaRepository<LearningNode, Long> {
     List<LearningNode> findByClassRoom_ClassIdAndVisibleTrueOrderByOrderIndexAsc(Long classId);
+    List<LearningNode> findByClassRoomClassIdOrderByOrderIndexAsc(Long classId);
 }
