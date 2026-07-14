@@ -50,6 +50,7 @@ public class StudentPracticeController {
         List<ContentResource> contents = studentLearningService.getAvailableContentResources(studentId);
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("contents", contents);
+        model.addAttribute("activePage", "ai");
         return "student/ai-practice/index";
     }
 
@@ -157,6 +158,7 @@ public class StudentPracticeController {
 
         boolean completed = "COMPLETED".equalsIgnoreCase(sessionObj.getStatus());
         model.addAttribute("completed", completed);
+        model.addAttribute("activePage", "ai");
 
         return "student/ai-practice/session";
     }
@@ -269,6 +271,7 @@ public class StudentPracticeController {
         model.addAttribute("revealedCount", revealedCount);
         model.addAttribute("correctCount", correctCount);
         model.addAttribute("accuracy", accuracy);
+        model.addAttribute("activePage", "ai");
 
         return "student/ai-practice/result";
     }
@@ -338,6 +341,7 @@ public class StudentPracticeController {
 
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("history", history);
+        model.addAttribute("activePage", "ai");
         return "student/ai-practice/history";
     }
 

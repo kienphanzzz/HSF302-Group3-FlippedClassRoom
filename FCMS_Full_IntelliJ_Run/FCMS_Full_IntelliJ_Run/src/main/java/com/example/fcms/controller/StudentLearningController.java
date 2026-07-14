@@ -41,6 +41,7 @@ public class StudentLearningController {
         List<ClassRoom> classes = studentLearningService.getJoinedClasses(studentId);
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("classes", classes);
+        model.addAttribute("activePage", "classes");
 
         if (classes.isEmpty()) {
             model.addAttribute("error", "You are not enrolled in any classes.");
@@ -95,6 +96,7 @@ public class StudentLearningController {
         List<ClassRoom> classes = studentLearningService.getJoinedClasses(studentId);
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("classes", classes);
+        model.addAttribute("activePage", "classes");
         return "student/classes";
     }
 
@@ -116,6 +118,7 @@ public class StudentLearningController {
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("activeClass", activeClass);
         model.addAttribute("nodes", nodes);
+        model.addAttribute("activePage", "classes");
         model.addAttribute("classes", classes);
         
         java.util.Map<Long, List<ContentResource>> nodeResources = new java.util.HashMap<>();
@@ -157,6 +160,7 @@ public class StudentLearningController {
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("node", node);
         model.addAttribute("contents", contents);
+        model.addAttribute("activePage", "classes");
         return "student/node-detail";
     }
 

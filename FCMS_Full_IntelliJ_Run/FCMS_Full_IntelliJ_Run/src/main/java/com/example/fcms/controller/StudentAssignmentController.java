@@ -39,6 +39,7 @@ public class StudentAssignmentController {
         List<Assignment> assignments = studentAssignmentService.getAssignmentsForStudent(studentId);
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("assignments", assignments);
+        model.addAttribute("activePage", "assignments");
         return "student/assignments/list";
     }
 
@@ -57,6 +58,7 @@ public class StudentAssignmentController {
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("assignment", assignment);
         model.addAttribute("submission", submissionOpt.orElse(null));
+        model.addAttribute("activePage", "assignments");
         return "student/assignments/detail";
     }
 
@@ -91,6 +93,7 @@ public class StudentAssignmentController {
         List<Submission> submissions = studentAssignmentService.getSubmissionsForStudent(studentId);
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("submissions", submissions);
+        model.addAttribute("activePage", "assignments");
         return "student/submissions/list";
     }
 
@@ -105,6 +108,7 @@ public class StudentAssignmentController {
 
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAttribute("submission", submissionOpt.get());
+        model.addAttribute("activePage", "assignments");
         return "student/submissions/detail";
     }
 

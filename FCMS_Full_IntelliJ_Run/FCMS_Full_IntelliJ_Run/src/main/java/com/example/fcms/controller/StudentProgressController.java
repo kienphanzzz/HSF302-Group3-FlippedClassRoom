@@ -38,6 +38,7 @@ public class StudentProgressController {
         
         model.addAttribute("studentName", "Alex Nguyen");
         model.addAllAttributes(summary);
+        model.addAttribute("activePage", "progress");
         
         return "student/progress";
     }
