@@ -37,8 +37,8 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // Check if demo student already exists to avoid duplication
-        if (userRepository.findByEmail("demo-student@fcms.local").isPresent()) {
+        // Check if demo student or classroom already exists to avoid duplication
+        if (userRepository.findByEmail("demo-student@fcms.local").isPresent() || classRoomRepository.existsByClassCode("SE2024")) {
             return;
         }
 
