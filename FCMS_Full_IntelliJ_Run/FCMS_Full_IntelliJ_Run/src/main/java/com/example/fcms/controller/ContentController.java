@@ -79,6 +79,7 @@ public class ContentController {
         model.addAttribute("classRoom", node.getClassRoom());
         model.addAttribute("contents", contents);
         model.addAttribute("teacherName", teacher.getFullName());
+        model.addAttribute("activePage", "classes");
 
         return "manage-content";
     }

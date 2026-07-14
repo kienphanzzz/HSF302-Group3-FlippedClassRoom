@@ -80,6 +80,7 @@ public class LearningNodeController {
         model.addAttribute("topics", nodes);
         model.addAttribute("nodeContents", nodeContents);
         model.addAttribute("teacherName", teacher.getFullName());
+        model.addAttribute("activePage", "classes");
         
         return "topic-detail";
     }
