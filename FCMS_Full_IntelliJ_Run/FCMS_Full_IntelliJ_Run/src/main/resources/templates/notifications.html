@@ -6,12 +6,12 @@
   <div th:fragment="content">
     <section class="mb-4" style="display:flex; justify-content:space-between; align-items:flex-end; gap:16px;">
       <div>
-        <h1 class="h2 mb-2">Thông báo của tôi</h1>
-        <p class="muted">Xem và cập nhật các thông báo mới nhất từ hệ thống và giáo viên của bạn.</p>
+        <h1 class="h2 mb-2">My Notifications</h1>
+        <p class="muted">View and keep track of notifications from the system and your teachers.</p>
       </div>
       <form th:action="@{/notifications/mark-read}" method="post" th:if="${not #lists.isEmpty(notifications)}">
         <button type="submit" class="btn btn-soft btn-sm flex items-center gap-1" style="font-weight: 800; border-radius: 10px; cursor: pointer;">
-          <i data-lucide="check-check"></i> Đánh dấu tất cả đã đọc
+          <i data-lucide="check-check"></i> Mark all as read
         </button>
       </form>
     </section>
@@ -37,7 +37,7 @@
       <!-- Empty State -->
       <div class="card card-pad text-center" th:if="${#lists.isEmpty(notifications)}">
         <div style="font-size: 2.5rem; color: var(--muted);" class="mb-2"><i data-lucide="bell"></i></div>
-        <p class="muted">Bạn không có thông báo nào.</p>
+        <p class="muted">You have no notifications.</p>
       </div>
     </div>
   </div>

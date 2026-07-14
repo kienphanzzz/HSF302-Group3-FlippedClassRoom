@@ -175,8 +175,11 @@ public class StudentLearningController {
         if (resource.getExternalUrl() != null && !resource.getExternalUrl().isEmpty()) {
             return "redirect:" + resource.getExternalUrl();
         }
+        if (resource.getFilePath() != null && !resource.getFilePath().isEmpty()) {
+            return "redirect:" + resource.getFilePath();
+        }
         
-        // If there's no external URL but a file path, we can redirect or show node detail
+        // If there's no external URL and no file path, show node detail
         return "redirect:/student/nodes/" + resource.getLearningNode().getNodeId();
     }
 }

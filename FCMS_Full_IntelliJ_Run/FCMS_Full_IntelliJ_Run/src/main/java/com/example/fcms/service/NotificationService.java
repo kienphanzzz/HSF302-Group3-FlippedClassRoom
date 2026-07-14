@@ -26,16 +26,16 @@ public class NotificationService {
             if (user != null) {
                 Notification n1 = Notification.builder()
                         .user(user)
-                        .title("Chào mừng thành viên mới!")
-                        .message("Chào mừng bạn đã tham gia lớp học Flipped Classroom (FCMS). Chúc bạn có những giờ học bổ ích!")
+                        .title("Welcome New Member!")
+                        .message("Welcome to Flipped Classroom (FCMS). We hope you have a great learning experience here!")
                         .isRead(false)
                         .build();
                 notificationRepository.save(n1);
 
                 Notification n2 = Notification.builder()
                         .user(user)
-                        .title("Nhắc nhở học tập")
-                        .message("Bạn có tài liệu học tập mới chưa xem trong lớp Software Engineering. Hãy click vào My Learning Path để theo dõi nhé.")
+                        .title("Study Reminder")
+                        .message("You have new learning materials in your Software Engineering class. Click on My Learning Path to check them out.")
                         .isRead(false)
                         .build();
                 notificationRepository.save(n2);
