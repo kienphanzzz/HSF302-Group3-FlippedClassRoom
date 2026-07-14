@@ -1,154 +1,124 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Class Detail - FCMS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" th:href="@{/css/fcms.css}" href="../../static/css/fcms.css" />
-</head>
+<head th:replace="~{fragments/layout :: head(title='Class Detail')}"></head>
 <body>
-<div class="page">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="logo"><i data-lucide="book-open"></i></div>
-      <div>
-        <div class="brand-title">FCMS</div>
-        <div class="brand-sub">Student Portal</div>
-      </div>
-    </div>
-    <nav class="nav">
-      <a th:href="@{/student/learning-path}"><i data-lucide="book-open"></i> My Learning Path</a>
-      <a class="active" th:href="@{/student/classes}"><i data-lucide="grid"></i> Joined Classes</a>
-      <a th:href="@{/student/assignments}"><i data-lucide="clipboard-list"></i> Assignments</a>
-      <a th:href="@{/student/ai-practice}"><i data-lucide="zap"></i> AI Practice</a>
-      <a th:href="@{/student/progress}"><i data-lucide="bar-chart-2"></i> Progress Dashboard</a>
-    </nav>
-    <div class="profile-box">
-      <div class="avatar student" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
-      <div class="truncate">
-        <div class="profile-name" th:text="${studentName ?: 'Alex Nguyen'}">Alex Nguyen</div>
-        <div class="profile-role">student</div>
-      </div>
-    </div>
-  </aside>
-
-  <div class="shell">
-    <header class="topbar">
-      <div class="top-title">
-        <span th:if="${activeClass != null}" th:text="${activeClass.className}">Software Engineering</span>
-        <span th:if="${activeClass != null}" th:text="' — ' + ${activeClass.classCode}"> — SE2024</span>
-      </div>
-      <div class="switcher" th:if="${activeClass != null}">
-        <a class="active" th:href="@{/student/classes/{id}(id=${activeClass.classId})}">Learning Path</a>
-        <a th:href="@{/student/ai-practice}">AI Practice</a>
-        <a th:href="@{/student/assignments}">Assignments</a>
-      </div>
-      <button class="icon-btn relative"><i data-lucide="bell"></i></button>
-      <div class="avatar student" style="width:34px;height:34px" th:text="${#strings.substring(studentName ?: 'AN',0,2)}">AN</div>
-    </header>
-
-    <main class="content">
-      <!-- Hero Section -->
-      <section class="card hero mb-4" th:if="${activeClass != null}">
-        <div class="hero-inner">
-          <div class="course-icon"><i data-lucide="graduation-cap" style="width:30px;height:30px"></i></div>
-          <div style="flex:1;min-width:0">
-            <div class="flex items-center gap-2 mb-2">
-              <h1 class="h1" th:text="${activeClass.className}">Software Engineering</h1>
-              <span class="tag tag-primary" th:text="${activeClass.classCode}">SE2024</span>
+<div th:replace="~{fragments/layout :: page(title='Class Detail', content=~{::content})}">
+  <div th:fragment="content">
+    <!-- Hero Section -->
+    <section class="card hero mb-4" th:if="${activeClass != null}">
+      <div class="hero-inner">
+        <div class="course-icon"><i data-lucide="graduation-cap" style="width:30px;height:30px"></i></div>
+        <div style="flex:1;min-width:0">
+          <div class="flex items-center gap-2 mb-2">
+            <h1 class="h1" th:text="${activeClass.className}">Software Engineering</h1>
+            <span class="tag tag-primary" th:text="${activeClass.classCode}">SE2024</span>
+          </div>
+          <div class="sub">
+            <span th:text="${activeClass.teacher.fullName}">Prof. Tran Phuong</span> · 
+            <span th:text="${activeClass.description ?: 'No description provided.'}">Fall 2025</span>
+          </div>
+          <div style="max-width:380px;margin-top:14px">
+            <div class="progress-head">
+              <span class="muted">Class study progress</span>
+              <strong class="text-primary" th:text="${overallProgress}">52%</strong>
             </div>
-            <div class="sub">
-              <span th:text="${activeClass.teacher.fullName}">Prof. Tran Phuong</span> · 
-              <span th:text="${activeClass.description ?: 'No description provided.'}">Fall 2025</span>
-            </div>
-            <div style="max-width:380px;margin-top:14px">
-              <div class="progress-head">
-                <span class="muted">Class study progress</span>
-                <strong class="text-primary" th:text="${overallProgress}">52%</strong>
-              </div>
-              <div class="progress">
-                <span th:style="|width:${overallProgressValue}%|"></span>
-              </div>
+            <div class="progress">
+              <span th:style="|width:${overallProgressValue}%|"></span>
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- Legend -->
-      <div class="flex items-center gap-3 mb-4" style="flex-wrap:wrap" th:if="${activeClass != null}">
-        <strong class="small muted">Resource types:</strong>
-        <span class="tag tag-primary"><i data-lucide="play-circle"></i> Video</span>
-        <span class="tag" style="background:#e0f2f7;color:#0891b2"><i data-lucide="file-text"></i> Document</span>
-        <span class="tag tag-orange"><i data-lucide="clipboard-list"></i> Assignment</span>
-        <span class="tag tag-purple"><i data-lucide="zap"></i> Self-Practice</span>
       </div>
+    </section>
 
-      <!-- Topics / Learning Nodes -->
-      <section th:if="${activeClass != null}">
-        <article class="topic" th:each="node, stat : ${nodes}">
-          <div class="topic-head" th:attr="data-toggle-topic=|topic-${node.nodeId}|">
-            <div class="topic-num" th:text="${stat.index + 1}">1</div>
+    <!-- Legend -->
+    <div class="flex items-center gap-3 mb-4" style="flex-wrap:wrap" th:if="${activeClass != null}">
+      <strong class="small muted">Resource types:</strong>
+      <span class="tag tag-primary"><i data-lucide="play-circle"></i> Video</span>
+      <span class="tag" style="background:#e0f2f7;color:#0891b2"><i data-lucide="file-text"></i> Document</span>
+      <span class="tag tag-orange"><i data-lucide="clipboard-list"></i> Assignment</span>
+      <span class="tag tag-purple"><i data-lucide="zap"></i> Self-Practice</span>
+    </div>
+
+    <!-- Topics / Learning Nodes -->
+    <section th:if="${activeClass != null}">
+      <article class="topic" th:each="node, stat : ${nodes}">
+        <div class="topic-head" th:attr="data-toggle-topic=|topic-${node.nodeId}|" style="cursor: pointer;">
+          <div class="topic-num" th:text="${stat.index + 1}">1</div>
+          <div style="flex:1;min-width:0">
+            <div class="flex items-center gap-2" style="flex-wrap:wrap">
+              <div class="topic-title" th:text="${node.title}">Topic 1: Introduction to Software Engineering</div>
+            </div>
+            <p class="muted small mt-1 mb-0" th:text="${node.description}">Topic description</p>
+          </div>
+          <i data-lucide="chevron-down" class="muted"></i>
+        </div>
+
+        <div class="topic-body" th:id="'topic-' + ${node.nodeId}">
+          <!-- Content Resources -->
+          <div class="node" th:each="content : ${nodeResources[node.nodeId]}">
+            <div class="node-icon bg-primary-light text-primary" 
+                 th:classappend="${content.contentType == 'VIDEO_URL' ? 'bg-primary-light text-primary' : 'bg-cyan-light text-info'}">
+              <i th:attr="data-lucide=${content.contentType == 'VIDEO_URL' ? 'play-circle' : (content.contentType == 'MEETING_URL' ? 'video' : 'file-text')}"></i>
+            </div>
             <div style="flex:1;min-width:0">
-              <div class="flex items-center gap-2" style="flex-wrap:wrap">
-                <div class="topic-title" th:text="${node.title}">Topic 1: Introduction to Software Engineering</div>
-              </div>
-              <p class="muted small mt-1 mb-0" th:text="${node.description}">Topic description</p>
-            </div>
-            <i data-lucide="chevron-down" class="muted"></i>
-          </div>
-
-          <div class="topic-body" th:id="'topic-' + ${node.nodeId}">
-            <!-- Content Resources -->
-            <div class="node" th:each="content : ${nodeResources[node.nodeId]}">
-              <div class="node-icon bg-primary-light text-primary" 
-                   th:classappend="${content.contentType == 'VIDEO_URL' ? 'bg-primary-light text-primary' : 'bg-cyan-light text-info'}">
-                <i th:attr="data-lucide=${content.contentType == 'VIDEO_URL' ? 'play-circle' : (content.contentType == 'MEETING_URL' ? 'video' : 'file-text')}"></i>
-              </div>
-              <div style="flex:1;min-width:0">
-                <a th:href="@{/student/content/{id}(id=${content.contentId})}" target="_blank" class="node-name font-bold hover:underline" th:text="${content.title}">What is Software Engineering?</a>
-                <div class="node-detail">
-                  <span th:text="${content.contentType}">VIDEO_URL</span>
-                  <span th:if="${content.durationMinutes != null}">· <span th:text="${content.durationMinutes}">12</span> min</span>
-                  <span th:if="${content.description != null}" th:text="'· ' + ${content.description}">Description</span>
-                </div>
-              </div>
-              <div class="node-status text-green">
-                <i data-lucide="check-circle-2"></i>
+              <a th:href="@{/student/content/{id}(id=${content.contentId})}" target="_blank" class="node-name font-bold hover:underline" th:text="${content.title}">What is Software Engineering?</a>
+              <div class="node-detail">
+                <span th:text="${content.contentType}">VIDEO_URL</span>
+                <span th:if="${content.durationMinutes != null}">· <span th:text="${content.durationMinutes}">12</span> min</span>
+                <span th:if="${content.description != null}" th:text="'· ' + ${content.description}">Description</span>
               </div>
             </div>
-
-            <!-- Assignments -->
-            <div class="node" th:each="assignment : ${nodeAssignments[node.nodeId]}">
-              <div class="node-icon bg-orange-light text-accent">
-                <i data-lucide="clipboard-list"></i>
-              </div>
-              <div style="flex:1;min-width:0">
-                <a th:href="@{/student/assignments/{id}(id=${assignment.assignmentId})}" class="node-name font-bold hover:underline" th:text="${assignment.title}">SRS Assignment</a>
-                <div class="node-detail">
-                  <span class="tag tag-orange">Assignment</span>
-                  <span>· Max Score: <span th:text="${assignment.maxScore}">10.0</span></span>
-                  <span class="text-accent">· Due <span th:text="${#temporals.format(assignment.deadline, 'MMM dd, yyyy HH:mm')}">Dec 20, 2025</span></span>
-                </div>
-              </div>
-              <div class="node-status">
-                <i data-lucide="circle" class="muted"></i>
-              </div>
-            </div>
-            
-            <div class="p-3 text-center muted small" th:if="${#lists.isEmpty(nodeResources[node.nodeId]) && #lists.isEmpty(nodeAssignments[node.nodeId])}">
-              No learning materials or assignments released for this topic yet.
+            <div class="node-status text-green">
+              <i data-lucide="check-circle-2"></i>
             </div>
           </div>
-        </article>
-      </section>
 
-    </main>
+          <!-- Assignments -->
+          <div class="node" th:each="assignment : ${nodeAssignments[node.nodeId]}">
+            <div class="node-icon bg-orange-light text-accent">
+              <i data-lucide="clipboard-list"></i>
+            </div>
+            <div style="flex:1;min-width:0">
+              <a th:href="@{/student/assignments/{id}(id=${assignment.assignmentId})}" class="node-name font-bold hover:underline" th:text="${assignment.title}">SRS Assignment</a>
+              <div class="node-detail">
+                <span class="tag tag-orange">Assignment</span>
+                <span>· Max Score: <span th:text="${assignment.maxScore}">10.0</span></span>
+                <span class="text-accent">· Due <span th:text="${#temporals.format(assignment.deadline, 'MMM dd, yyyy HH:mm')}">Dec 20, 2025</span></span>
+              </div>
+            </div>
+            <div class="node-status">
+              <i data-lucide="circle" class="muted"></i>
+            </div>
+          </div>
+          
+          <div class="p-3 text-center muted small" th:if="${#lists.isEmpty(nodeResources[node.nodeId]) && #lists.isEmpty(nodeAssignments[node.nodeId])}">
+            No learning materials or assignments released for this topic yet.
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Custom inline JS for toggling topics -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-toggle-topic]').forEach(header => {
+          header.addEventListener('click', () => {
+            const targetId = header.getAttribute('data-toggle-topic');
+            const body = document.getElementById(targetId);
+            if (body) {
+              const isHidden = window.getComputedStyle(body).display === 'none';
+              body.style.display = isHidden ? 'block' : 'none';
+              const icon = header.querySelector('[data-lucide="chevron-down"], [data-lucide="chevron-up"]');
+              if (icon) {
+                icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+              }
+            }
+          });
+        });
+      });
+    </script>
   </div>
 </div>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script th:src="@{/js/fcms.js}" src="../../static/js/fcms.js"></script>
+<script th:replace="~{fragments/layout :: scripts}"></script>
 </body>
 </html>
