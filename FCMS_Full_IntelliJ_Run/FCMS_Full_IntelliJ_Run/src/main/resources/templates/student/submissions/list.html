@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='My Submissions')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='My Submissions', content=~{::content})}">
+  <div th:fragment="content">
+    <div class="flex justify-center mb-4">
+      <div class="switcher">
+        <a th:href="@{/student/assignments}">Assignments</a>
+        <a class="active" th:href="@{/student/submissions}">Submissions History</a>
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h1 class="h2 mb-2">My Submissions</h1>
+      <p class="muted">Review your submitted work, grading scores, and feedback from your instructors.</p>
+    </section>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Assignment</th>
+              <th>Submitted Date</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Loop Submissions -->
+            <tr th:each="submission : ${submissions}">
+              <td>
+                <div style="font-weight: 750;" th:text="${submission.assignment.title}">SRS Assignment</div>
+                <div class="small muted" th:text="${submission.assignment.learningNode.classRoom.className}">Software Engineering</div>
+              </td>
+              <td th:text="${#temporals.format(submission.submittedAt, 'MMM dd, yyyy HH:mm')}">Dec 18, 2025</td>
+              <td>
+                <span class="tag tag-green" th:if="${submission.submissionStatus == 'ON_TIME'}">On Time</span>
+                <span class="tag tag-orange" th:if="${submission.submissionStatus == 'LATE'}">Late</span>
+                <span class="tag tag-gray" th:if="${submission.submissionStatus == 'MISSING'}">Missing</span>
+              </td>
+              <td>
+                <strong th:classappend="${submission.score != null ? 'text-primary' : 'muted'}"
+                        th:text="${submission.score != null ? submission.score + ' / ' + submission.assignment.maxScore : 'Not Graded'}">8.50 / 10.00</strong>
+              </td>
+              <td>
+                <a th:href="@{/student/submissions/{id}(id=${submission.submissionId})}" class="btn btn-soft btn-sm flex items-center gap-1">
+                  Feedback Details <i data-lucide="arrow-right" style="width:14px;height:14px"></i>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Empty state -->
+            <tr th:if="${#lists.isEmpty(submissions)}">
+              <td colspan="5" class="text-center muted p-4">
+                <div style="font-size: 2rem;" class="mb-2"><i data-lucide="folder-open"></i></div>
+                You have not submitted any assignments yet.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

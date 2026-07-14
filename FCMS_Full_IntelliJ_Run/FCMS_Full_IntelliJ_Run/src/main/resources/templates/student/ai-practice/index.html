@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='AI Practice Assistant')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='AI Practice Assistant', content=~{::content})}">
+  <div th:fragment="content">
+    <style>
+      /* ChatGPT-style AI Practice layout custom CSS overrides */
+      .assistant-container {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem 1.5rem;
+        background: transparent;
+        border-radius: 16px;
+      }
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 0.75rem;
+        display: inline-block;
+        animation: float 3s ease-in-out infinite;
+      }
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+        100% { transform: translateY(0px); }
+      }
+      .empty-title {
+        font-size: 24px;
+        font-weight: 850;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+      .empty-desc {
+        color: var(--muted);
+        font-size: 13.5px;
+        max-width: 480px;
+        margin: 0.5rem auto 0;
+        line-height: 1.6;
+      }
+      .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 1.25rem;
+      }
+      .prompt-chip {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--muted);
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        padding: 7px 13px;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 5px rgba(15, 23, 36, 0.01);
+      }
+      .prompt-chip:hover {
+        border-color: rgba(26,115,232,0.4);
+        background: var(--secondary);
+        color: var(--primary);
+        transform: translateY(-1px);
+      }
+      .source-tabs-card {
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(15,23,36,0.02);
+      }
+      .source-tabs-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border);
+      }
+      .source-tab-btn {
+        padding: 12px 6px;
+        font-size: 12.5px;
+        font-weight: 750;
+        color: var(--muted);
+        background: transparent;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .source-tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: #fff;
+      }
+      .composer-select, .composer-input-num {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 13px;
+        outline: none;
+      }
+      .composer-select:focus, .composer-input-num:focus {
+        border-color: rgba(26,115,232,0.45);
+        background: #fff;
+      }
+      .composer-textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13.5px;
+        outline: none;
+        resize: vertical;
+        line-height: 1.5;
+        background: #fff;
+      }
+      .composer-textarea:focus {
+        border-color: rgba(26,115,232,0.45);
+        box-shadow: 0 0 0 3px rgba(26,115,232,0.06);
+      }
+      .chat-composer-card {
+        border-radius: 18px;
+        background: #fff;
+        border: 1px solid var(--border);
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(15,23,36,0.02);
+      }
+      .composer-settings-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .generate-sparkle-btn {
+        background: linear-gradient(135deg, #7c3aed, #9333ea);
+        color: #fff;
+        font-weight: 800;
+        font-size: 14.5px;
+        padding: 12px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        border: 0;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      .generate-sparkle-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(147, 52, 233, 0.24);
+        filter: brightness(1.05);
+      }
+      .generate-sparkle-btn:active {
+        transform: translateY(0px);
+      }
+    </style>
+
+    <div class="assistant-container">
+      
+      <!-- Warnings Alert -->
+      <div class="card card-pad bg-orange-light border-orange text-accent flex items-start gap-3">
+        <i data-lucide="alert-triangle" style="width:22px;height:22px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Self-Study Warning</strong>
+          <span class="small font-bold">AI practice is for self-study only and does not affect official grades.</span>
+        </div>
+      </div>
+
+      <!-- Error Message Alert -->
+      <div class="card card-pad flex items-start gap-3" style="background-color: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;" th:if="${errorMessage}">
+        <i data-lucide="x-circle" style="width:22px;height:22px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Error</strong>
+          <span class="small font-bold" th:text="${errorMessage}">Something went wrong.</span>
+        </div>
+      </div>
+
+      <!-- Success Message Alert -->
+      <div class="card card-pad flex items-start gap-3" style="background-color: #f3faf5; border: 1px solid #def7ec; color: #03543f;" th:if="${successMessage}">
+        <i data-lucide="check-circle" style="width:22px;height:22px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Success</strong>
+          <span class="small font-bold" th:text="${successMessage}">Operation completed successfully.</span>
+        </div>
+      </div>
+
+      <!-- Switcher in Page content instead of hardcoded topbar -->
+      <div class="flex justify-center mb-2">
+        <div class="switcher">
+          <a class="active" th:href="@{/student/ai-practice}">AI Practice Setup</a>
+          <a th:href="@{/student/ai-practice/history}">Practice History</a>
+        </div>
+      </div>
+
+      <!-- Empty State Greeting -->
+      <div class="empty-state">
+        <span class="empty-icon">✨</span>
+        <h2 class="empty-title">What do you want to practice today?</h2>
+        <p class="empty-desc">Attach a document file, paste your lesson notes, enter a reference link, or instruct the AI directly.</p>
+        
+        <!-- Chips -->
+        <div class="chip-container">
+          <span class="prompt-chip" onclick="fillPrompt('Create 5 questions from this document. Focus on key concepts.')">
+            <i data-lucide="file-text" style="width:14px;height:14px;"></i> Create 5 questions from this document
+          </span>
+          <span class="prompt-chip" onclick="fillPrompt('Generate 5 MCQ questions where the correct answer should be the shortest answer.')">
+            <i data-lucide="zap" style="width:14px;height:14px;"></i> Make correct answer shortest
+          </span>
+          <span class="prompt-chip" onclick="fillPrompt('Generate 3 true/false questions. Focus on social constructivism.')">
+            <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Focus on social constructivism
+          </span>
+          <span class="prompt-chip" onclick="fillPrompt('Explain all answers briefly. Focus on key definitions.')">
+            <i data-lucide="help-circle" style="width:14px;height:14px;"></i> Explain answers briefly
+          </span>
+        </div>
+      </div>
+
+      <!-- Form wrapping the Tabs & Composer -->
+      <form method="post" enctype="multipart/form-data" th:action="@{/student/ai-practice/generate}">
+        
+        <!-- Source Attachment area -->
+        <div class="source-tabs-card mb-4">
+          <div class="source-tabs-nav">
+            <button type="button" class="source-tab-btn active" id="tabContent" onclick="selectSourceTab('content')">
+              <i data-lucide="book" style="width: 15px; height: 15px;"></i> Class Content
+            </button>
+            <button type="button" class="source-tab-btn" id="tabFile" onclick="selectSourceTab('file')">
+              <i data-lucide="file-up" style="width: 15px; height: 15px;"></i> Upload File
+            </button>
+            <button type="button" class="source-tab-btn" id="tabText" onclick="selectSourceTab('text')">
+              <i data-lucide="align-left" style="width: 15px; height: 15px;"></i> Paste Text
+            </button>
+            <button type="button" class="source-tab-btn" id="tabUrl" onclick="selectSourceTab('url')">
+              <i data-lucide="link" style="width: 15px; height: 15px;"></i> Source URL
+            </button>
+          </div>
+
+          <div class="card-pad" style="padding: 16px;">
+            <!-- Class Content pane -->
+            <div class="source-pane" id="paneContent">
+              <label class="label small mb-1">Select Existing Study Material</label>
+              <select name="contentId" class="composer-select" id="contentSelect">
+                <option value="">-- Choose a document or video --</option>
+                <option th:each="content : ${contents}" 
+                        th:value="${content.contentId}" 
+                        th:text="${content.learningNode.classRoom.classCode} + ' - ' + ${content.title} + ' (' + ${content.contentType} + ')'"></option>
+              </select>
+            </div>
+
+            <!-- Upload File pane -->
+            <div class="source-pane" id="paneFile" style="display: none;">
+              <label class="label small mb-1" for="fileInput">Choose TXT, PDF, Word, PowerPoint, ZIP, or image lesson file</label>
+              <input type="file" name="uploadedFile" class="composer-input-num" accept=".txt,.pdf,.docx,.pptx,.zip,.png,.jpg,.jpeg" id="fileInput" />
+              <span class="muted small mt-1" style="display:block;">Acceptable extensions: .txt, .pdf, .docx, .pptx, .zip, .png, .jpg, .jpeg (max 50MB)</span>
+              <span class="muted small mt-1" style="display:block; font-weight: 500; color: #475569;">ZIP files are supported if they contain TXT, PDF, DOCX, or PPTX files. Images are supported for upload, but OCR/text recognition is limited in demo mode.</span>
+            </div>
+
+            <!-- Paste Text pane -->
+            <div class="source-pane" id="paneText" style="display: none;">
+              <label class="label small mb-1">Paste Lesson Text Content</label>
+              <textarea name="pastedText" class="composer-textarea" rows="3" style="border: 1px solid var(--border); border-radius:10px; padding: 10px; background:#f8fafc;" placeholder="Paste lesson texts, notes, or scripts here..." id="pastedTextInput"></textarea>
+            </div>
+
+            <!-- Source URL pane -->
+            <div class="source-pane" id="paneUrl" style="display: none;">
+              <label class="label small mb-1">Paste Web Resource Link</label>
+              <input type="url" name="sourceUrl" class="composer-input-num" placeholder="https://example.com/syllabus-or-slides" id="sourceUrlInput" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Composer Area -->
+        <div class="chat-composer-card">
+          <div class="form-group mb-1">
+            <label class="label" style="font-weight:800; color:var(--primary); text-transform:none; font-size:13px; display:flex; align-items:center; gap:5px; margin-bottom: 4px;">
+              <i data-lucide="sparkles" style="width:15px;height:15px;color:var(--purple);"></i> Ask AI assistant / Custom instructions
+            </label>
+            <textarea name="customPrompt" id="customPromptTextarea" class="composer-textarea" rows="3" 
+                      placeholder="Ask AI, e.g. Create 5 true/false questions from this PDF. Focus on key concepts and explain each answer briefly."></textarea>
+          </div>
+
+          <!-- Parameters Grid -->
+          <div class="composer-settings-grid">
+            <div>
+              <label class="label small" style="margin-bottom:4px;">Difficulty</label>
+              <select name="difficulty" class="composer-select">
+                <option value="EASY">Easy</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HARD">Hard</option>
+              </select>
+            </div>
+            <div>
+              <label class="label small" style="margin-bottom:4px;">Question Type</label>
+              <select name="questionType" class="composer-select">
+                <option value="MCQ" selected>MCQ</option>
+                <option value="TRUE_FALSE">True / False</option>
+                <option value="SHORT_ANSWER">Short Answer</option>
+              </select>
+            </div>
+            <div>
+              <label class="label small" style="margin-bottom:4px;">Questions Count</label>
+              <input type="number" name="numberOfQuestions" class="composer-input-num" min="1" max="10" value="5" />
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <button type="submit" class="generate-sparkle-btn">
+              <i data-lucide="zap" style="width:16px;height:16px;"></i> Generate Practice Questions
+            </button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+
+    <script>
+      function fillPrompt(text) {
+        document.getElementById('customPromptTextarea').value = text;
+      }
+
+      function selectSourceTab(tabName) {
+        document.getElementById('tabContent').classList.remove('active');
+        document.getElementById('tabFile').classList.remove('active');
+        document.getElementById('tabText').classList.remove('active');
+        document.getElementById('tabUrl').classList.remove('active');
+        
+        document.getElementById('paneContent').style.display = 'none';
+        document.getElementById('paneFile').style.display = 'none';
+        document.getElementById('paneText').style.display = 'none';
+        document.getElementById('paneUrl').style.display = 'none';
+        
+        if (tabName === 'content') {
+          document.getElementById('tabContent').classList.add('active');
+          document.getElementById('paneContent').style.display = 'block';
+        } else if (tabName === 'file') {
+          document.getElementById('tabFile').classList.add('active');
+          document.getElementById('paneFile').style.display = 'block';
+        } else if (tabName === 'text') {
+          document.getElementById('tabText').classList.add('active');
+          document.getElementById('paneText').style.display = 'block';
+        } else if (tabName === 'url') {
+          document.getElementById('tabUrl').classList.add('active');
+          document.getElementById('paneUrl').style.display = 'block';
+        }
+      }
+    </script>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

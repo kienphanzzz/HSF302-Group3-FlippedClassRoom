@@ -12,6 +12,7 @@
 <body class="auth-body">
 
 <div class="auth-page">
+    <!-- ═══════════════ LEFT PANEL ═══════════════ -->
     <section class="auth-left">
         <div class="auth-logo">
             <div class="auth-logo-icon"><i data-lucide="book-open"></i></div>
@@ -62,6 +63,7 @@
         </div>
     </section>
 
+    <!-- ═══════════════ RIGHT PANEL ═══════════════ -->
     <section class="auth-right">
         <div class="auth-card register-card">
             <div class="auth-mobile-logo">
@@ -79,44 +81,273 @@
                 <p>Choose your role to start your flipped classroom journey</p>
             </div>
 
-            <form class="auth-form" th:action="@{/register}" method="post">
-                <div class="role-select-title">I am a...</div>
-                <div class="register-role-cards">
-                    <label class="role-card">
-                        <input type="radio" name="role" value="STUDENT" checked>
-                        <div><span class="role-icon"><i data-lucide="graduation-cap"></i></span><strong>Student</strong><p>Learn & explore</p></div>
+            <!-- Thông báo lỗi / thành công -->
+            <div id="alertBox" style="display:none; padding:10px 14px; border-radius:10px;
+                 font-size:0.875rem; margin-bottom:1rem; line-height:1.5;"></div>
+
+            <!-- Form đăng ký — gọi REST API bằng fetch() -->
+            <form id="registerForm" novalidate>
+
+                <!-- Chọn role -->
+                <div class="role-select-title" style="margin-bottom:10px;">I am a...</div>
+                <div class="register-role-cards" style="margin-bottom:12px;">
+                    <label class="role-card" id="labelStudent">
+                        <input type="radio" name="role" id="roleStudent" value="STUDENT" checked
+                               onchange="onRoleChange('STUDENT')">
+                        <div>
+                            <span class="role-icon"><i data-lucide="graduation-cap"></i></span>
+                            <strong>Student</strong>
+                            <p>Learn &amp; explore</p>
+                        </div>
                     </label>
-                    <label class="role-card teacher">
-                        <input type="radio" name="role" value="TEACHER">
-                        <div><span class="role-icon"><i data-lucide="users"></i></span><strong>Teacher</strong><p>Teach & manage</p></div>
+                    <label class="role-card teacher" id="labelTeacher">
+                        <input type="radio" name="role" id="roleTeacher" value="TEACHER"
+                               onchange="onRoleChange('TEACHER')">
+                        <div>
+                            <span class="role-icon"><i data-lucide="presentation"></i></span>
+                            <strong>Teacher</strong>
+                            <p>Teach &amp; manage</p>
+                        </div>
                     </label>
                 </div>
 
-                <button class="google-btn" type="button"><span class="google-icon">G</span> Sign up with Google</button>
-                <div class="divider"><span></span><p>or continue with</p><span></span></div>
+                <!-- Info box thay đổi theo role -->
+                <div id="roleHint" style="padding:10px 14px; border-radius:12px; font-size:0.82rem;
+                     margin-bottom:14px; background:#eff6ff; color:#1d4ed8;
+                     border:1px solid rgba(37,99,235,0.15); line-height:1.5;">
+                    🎓 <strong>Student account:</strong>
+                    Join classes, watch lecture videos, complete assignments, practice with AI, and track your learning progress.
+                </div>
 
-                <div class="form-group"><label>Full name</label><input type="text" name="fullName" placeholder="Nguyen Van A" required></div>
-                <div class="form-group"><label>Email address</label><input type="email" name="email" placeholder="you@school.edu" required></div>
-                <div class="form-group password-field">
-                    <label>Password</label>
-                    <input id="registerPassword" type="password" name="password" placeholder="Create a strong password" required>
-                    <button type="button" class="password-toggle" data-toggle-password="registerPassword"><i data-lucide="eye"></i></button>
+                <!-- Đăng ký bằng Google -->
+                <a href="/oauth2/authorization/google" class="google-btn">
+                    <span class="google-icon">G</span>
+                    Sign up with Google
+                </a>
+                <div class="divider"><span></span><p>or continue with email</p><span></span></div>
+
+                <!-- Full name -->
+                <div class="form-group">
+                    <label for="fullName">Full name</label>
+                    <input id="fullName" type="text" name="fullName"
+                           placeholder="Nguyen Van A" required autocomplete="name">
+                    <div class="field-error" id="err-fullName"></div>
                 </div>
-                <div class="form-group password-field">
-                    <label>Confirm password</label>
-                    <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Repeat your password" required>
-                    <button type="button" class="password-toggle" data-toggle-password="confirmPassword"><i data-lucide="eye"></i></button>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input id="email" type="email" name="email"
+                           placeholder="you@school.edu" required autocomplete="email">
+                    <div class="field-error" id="err-email"></div>
                 </div>
-                <button class="auth-submit" type="submit">Create Account <i data-lucide="chevron-right"></i></button>
+
+                <!-- Password -->
+                <div class="form-group password-field">
+                    <label for="registerPassword">Password</label>
+                    <input id="registerPassword" type="password" name="password"
+                           placeholder="Abc@123" minlength="6" maxlength="100" required autocomplete="new-password">
+                    <button type="button" class="password-toggle"
+                            data-toggle-password="registerPassword">
+                        <i data-lucide="eye"></i>
+                    </button>
+                    <div class="field-error" id="err-password"></div>
+                </div>
+
+                <!-- Confirm password -->
+                <div class="form-group password-field">
+                    <label for="confirmPassword">Confirm password</label>
+                    <input id="confirmPassword" type="password" name="confirmPassword"
+                           placeholder="Repeat your password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle"
+                            data-toggle-password="confirmPassword">
+                        <i data-lucide="eye"></i>
+                    </button>
+                    <div class="field-error" id="err-confirm"></div>
+                </div>
+
+                <button class="auth-submit" type="submit" id="submitBtn">
+                    <i data-lucide="user-plus" style="width:17px;"></i>
+                    <span id="submitLabel">Create Student Account</span>
+                </button>
             </form>
 
-            <p class="terms-text">By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
-            <p class="auth-bottom-text">Already have an account? <a th:href="@{/login}">Sign in</a></p>
+            <p class="terms-text">
+                By signing up, you agree to our
+                <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            </p>
+            <p class="auth-bottom-text">
+                Already have an account? <a th:href="@{/login}">Sign in</a>
+            </p>
         </div>
     </section>
 </div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script th:src="@{/js/fcms.js}" src="../static/js/fcms.js"></script>
+<script>
+    lucide.createIcons();
+
+    const form       = document.getElementById('registerForm');
+    const submitBtn  = document.getElementById('submitBtn');
+    const alertBox   = document.getElementById('alertBox');
+    const passwordPattern = /^(?=.{6,100}$)(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9])[A-Z].*$/;
+    const passwordRuleMessage = 'Password must start with an uppercase letter and include lowercase letter, number, and special character';
+
+    // ─── Role switch handler ───────────────────────────────────────────────
+    const roleHints = {
+        STUDENT: {
+            bg:    '#eff6ff',
+            color: '#1d4ed8',
+            border:'rgba(37,99,235,0.15)',
+            text:  '🎓 <strong>Student account:</strong> Join classes, watch lecture videos, complete assignments, practice with AI, and track your learning progress.'
+        },
+        TEACHER: {
+            bg:    '#fff7ed',
+            color: '#c2410c',
+            border:'rgba(249,115,22,0.2)',
+            text:  '👨‍🏫 <strong>Teacher account:</strong> Create and manage classes, upload learning materials, build question banks, and monitor student progress.'
+        }
+    };
+
+    function onRoleChange(role) {
+        const hint = roleHints[role];
+        const box  = document.getElementById('roleHint');
+        box.style.background   = hint.bg;
+        box.style.color        = hint.color;
+        box.style.borderColor  = hint.border;
+        box.innerHTML          = hint.text;
+        document.getElementById('submitLabel').textContent =
+            role === 'TEACHER' ? 'Create Teacher Account' : 'Create Student Account';
+        lucide.createIcons();
+    }
+
+    // ─── Submit form ──────────────────────────────────────────────────────
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearErrors();
+
+        const fullName       = document.getElementById('fullName').value.trim();
+        const email          = document.getElementById('email').value.trim();
+        const password       = document.getElementById('registerPassword').value;
+        const confirmPwd     = document.getElementById('confirmPassword').value;
+        const role           = document.querySelector('input[name="role"]:checked').value;
+
+        // ─── Client-side validation ───────────────────────────────────────
+        let hasError = false;
+
+        if (!fullName) {
+            showFieldError('err-fullName', 'Full name is required');
+            hasError = true;
+        } else if (fullName.length > 100) {
+            showFieldError('err-fullName', 'Full name max 100 characters');
+            hasError = true;
+        }
+
+        if (!email) {
+            showFieldError('err-email', 'Email is required');
+            hasError = true;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showFieldError('err-email', 'Invalid email format');
+            hasError = true;
+        }
+
+        if (!password) {
+            showFieldError('err-password', 'Password is required');
+            hasError = true;
+        } else if (!passwordPattern.test(password)) {
+            showFieldError('err-password', passwordRuleMessage);
+            hasError = true;
+        }
+
+        if (password !== confirmPwd) {
+            showFieldError('err-confirm', 'Passwords do not match');
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        // ─── Gọi API ─────────────────────────────────────────────────────
+        submitBtn.disabled    = true;
+        submitBtn.textContent = 'Creating account...';
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ fullName, email, password, role })
+            });
+
+            const data = await res.json();
+
+            if (res.status === 201) {
+                // ✅ Đăng ký thành công → redirect theo role
+                showAlert(
+                    '✅ Account created! Redirecting to login...',
+                    '#d1fae5', '#065f46'
+                );
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1500);
+
+            } else if (res.status === 400 && data.fieldErrors) {
+                // Validation errors từ backend (@Valid)
+                Object.entries(data.fieldErrors).forEach(([field, msg]) => {
+                    const errId = {
+                        fullName: 'err-fullName',
+                        email:    'err-email',
+                        password: 'err-password',
+                        role:     null
+                    }[field];
+                    if (errId) showFieldError(errId, msg);
+                });
+
+            } else {
+                // Lỗi khác (409 email trùng, 500...)
+                showAlert('❌ ' + (data.message || 'Registration failed. Please try again.'),
+                          '#fee2e2', '#991b1b');
+            }
+
+        } catch (err) {
+            showAlert('❌ Network error. Please check your connection.', '#fee2e2', '#991b1b');
+        } finally {
+            submitBtn.disabled    = false;
+            submitBtn.innerHTML   = 'Create Account <i data-lucide="chevron-right"></i>';
+            lucide.createIcons();
+        }
+    });
+
+    // ─── Helpers ──────────────────────────────────────────────────────────
+    function showFieldError(id, msg) {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = msg; el.style.display = 'block'; }
+    }
+
+    function clearErrors() {
+        document.querySelectorAll('.field-error').forEach(el => {
+            el.textContent = '';
+            el.style.display = 'none';
+        });
+        alertBox.style.display = 'none';
+    }
+
+    function showAlert(msg, bg, color) {
+        alertBox.textContent        = msg;
+        alertBox.style.background   = bg;
+        alertBox.style.color        = color;
+        alertBox.style.border       = `1px solid ${color}33`;
+        alertBox.style.display      = 'block';
+    }
+</script>
+
+<style>
+    /* Field-level error message */
+    .field-error {
+        color: #ef4444;
+        font-size: 0.78rem;
+        margin-top: 4px;
+        display: none;
+    }
+</style>
 </body>
 </html>

@@ -25,8 +25,29 @@ public class PracticeSession {
     private User student;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "content_id", nullable = false)
+    @JoinColumn(name = "content_id", nullable = true)
     private ContentResource content;
+
+    @Column(name = "source_type", length = 50)
+    private String sourceType;
+
+    @Column(name = "source_title", length = 255)
+    private String sourceTitle;
+
+    @Column(name = "source_text", columnDefinition = "NVARCHAR(MAX)")
+    private String sourceText;
+
+    @Column(name = "source_url", length = 1000)
+    private String sourceUrl;
+
+    @Column(name = "uploaded_file_path", length = 1000)
+    private String uploadedFilePath;
+
+    @Column(name = "original_file_name", length = 255)
+    private String originalFileName;
+
+    @Column(name = "custom_prompt", columnDefinition = "NVARCHAR(MAX)")
+    private String customPrompt;
 
     // EASY / MEDIUM / HARD
     @Builder.Default
@@ -45,6 +66,10 @@ public class PracticeSession {
     @Builder.Default
     @Column(name = "correct_answers", nullable = false)
     private Integer correctAnswers = 0;
+
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 50)
+    private String status = "GENERATED";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

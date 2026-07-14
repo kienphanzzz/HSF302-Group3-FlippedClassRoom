@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Progress Dashboard')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Progress Dashboard', content=~{::content})}">
+  <div th:fragment="content">
+    <section class="mb-4">
+      <h1 class="h2 mb-2">My Learning Progress</h1>
+      <p class="muted">Check your engagement metrics, pre-class activity logs, and assignment completion status.</p>
+    </section>
+
+    <!-- Stat Cards Grid -->
+    <div class="grid mb-5" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+      <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--primary);">
+        <div class="muted small mb-1">Joined Classes</div>
+        <div class="h1 font-extrabold text-primary" th:text="${joinedClassesCount}">2</div>
+      </div>
+      
+      <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid #0891b2;">
+        <div class="muted small mb-1">Materials Studied</div>
+        <div class="h1 font-extrabold" style="color: #0891b2;" th:text="${viewedContentCount}">3</div>
+      </div>
+
+      <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--green);">
+        <div class="muted small mb-1">Submitted Assignments</div>
+        <div class="h1 font-extrabold text-green" th:text="${submittedAssignmentsCount}">1</div>
+      </div>
+
+      <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--accent);">
+        <div class="muted small mb-1">Late Submissions</div>
+        <div class="h1 font-extrabold text-accent" th:text="${lateSubmissionsCount}">0</div>
+      </div>
+
+      <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid purple;">
+        <div class="muted small mb-1">AI Practice Sessions</div>
+        <div class="h1 font-extrabold" style="color: purple;" th:text="${aiPracticeSessionsCount}">4</div>
+      </div>
+    </div>
+
+    <!-- Activity Log Timeline -->
+    <div class="card card-pad">
+      <h2 class="h3 mb-4"><i data-lucide="activity" style="vertical-align: text-bottom;"></i> Recent Learning Activities</h2>
+      
+      <div class="timeline" th:if="${not #lists.isEmpty(recentActivities)}" style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="flex items-start gap-4 p-3 bg-secondary mb-2" style="border-radius: 6px;" th:each="log : ${recentActivities}">
+          <!-- Badge based on activity type -->
+          <div style="flex-shrink: 0;">
+            <span class="tag tag-primary" th:if="${log.activityType == 'VIEW_CONTENT'}" style="background:#e0f2f7;color:#0891b2">VIEW</span>
+            <span class="tag tag-primary" th:if="${log.activityType == 'WATCH_VIDEO'}" style="background:rgba(26,115,232,0.1);color:var(--primary)">VIDEO</span>
+            <span class="tag tag-orange" th:if="${log.activityType == 'OPEN_LINK'}">LINK</span>
+            <span class="tag tag-purple" th:if="${log.activityType == 'TAKE_PRACTICE'}" style="background:purple;color:#fff">PRACTICE</span>
+            <span class="tag tag-green" th:if="${log.activityType == 'SUBMIT_ASSIGNMENT'}">SUBMIT</span>
+          </div>
+
+          <!-- Description -->
+          <div style="flex:1;">
+            <span th:if="${log.activityType == 'VIEW_CONTENT'}" th:text="'Viewed material: ' + ${log.content != null ? log.content.title : 'Material'}"></span>
+            <span th:if="${log.activityType == 'WATCH_VIDEO'}" th:text="'Watched video lecture: ' + ${log.content != null ? log.content.title : 'Video'}"></span>
+            <span th:if="${log.activityType == 'OPEN_LINK'}" th:text="'Opened link: ' + ${log.content != null ? log.content.title : 'Link'}"></span>
+            <span th:if="${log.activityType == 'TAKE_PRACTICE'}" th:text="'Took AI self-practice for: ' + ${log.learningNode != null ? log.learningNode.title : 'Practice'}"></span>
+            <span th:if="${log.activityType == 'SUBMIT_ASSIGNMENT'}" th:text="'Submitted assignment for: ' + ${log.learningNode != null ? log.learningNode.title : 'Assignment'}"></span>
+            
+            <div class="small text-muted" th:text="${log.classRoom.className} + ' · ' + ${#temporals.format(log.createdAt, 'MMM dd, yyyy HH:mm')}">Class name · Date</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center p-4 muted" th:if="${#lists.isEmpty(recentActivities)}">
+        <div style="font-size: 2rem;" class="mb-2"><i data-lucide="clock"></i></div>
+        No pre-class activities logged yet. Get started by viewing materials in your learning path!
+      </div>
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Submission Feedback')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Submission Feedback', content=~{::content})}">
+  <div th:fragment="content">
+    <div class="flex justify-center mb-4">
+      <div class="switcher">
+        <a th:href="@{/student/submissions}">Back to Submissions History</a>
+      </div>
+    </div>
+
+    <div class="grid" style="display:grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+      <!-- Answer details -->
+      <div>
+        <section class="card card-pad mb-4">
+          <span class="tag tag-primary mb-2" th:text="${submission.assignment.learningNode.classRoom.classCode}">SE2024</span>
+          <h1 class="h2 mb-3" th:text="${submission.assignment.title}">SRS Assignment</h1>
+          <div class="small text-muted mb-4">
+            Submitted at: <span th:text="${#temporals.format(submission.submittedAt, 'MMM dd, yyyy HH:mm')}">Dec 18, 2025</span>
+          </div>
+
+          <h3 class="h3 mb-2" style="font-weight: 750;">Your Answer Text</h3>
+          <div class="p-3 bg-secondary mb-4" style="border-radius: 6px; white-space: pre-wrap; font-family: inherit;" th:text="${submission.answerText}">
+            Submitted answers text...
+          </div>
+
+          <h3 class="h3 mb-2" style="font-weight: 750;">Attached File</h3>
+          <div class="p-3 bg-secondary flex items-center gap-3" style="border-radius: 6px;" th:if="${submission.filePath != null}">
+            <div class="stat-icon bg-primary text-white" style="width:36px;height:36px;border-radius:4px;"><i data-lucide="file"></i></div>
+            <div>
+              <div class="small font-bold" th:text="${submission.originalFileName ?: 'placeholder.pdf'}">srs-doc.pdf</div>
+              <div class="small text-muted" th:text="${submission.filePath}">uploads/placeholder.pdf</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Instructor evaluation -->
+      <div>
+        <section class="card card-pad">
+          <h2 class="h3 mb-3">Evaluation Results</h2>
+
+          <div class="mb-4">
+            <div class="muted small mb-1">Grading Status</div>
+            <div>
+              <span class="tag tag-green" th:if="${submission.submissionStatus == 'ON_TIME'}">Submitted On Time</span>
+              <span class="tag tag-orange" th:if="${submission.submissionStatus == 'LATE'}">Submitted Late</span>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <div class="muted small mb-1">Official Score</div>
+            <div class="h1 font-extrabold text-primary" 
+                 th:text="${submission.score != null ? submission.score + ' / ' + submission.assignment.maxScore : 'NOT GRADED YET'}">8.5 / 10.0</div>
+          </div>
+
+          <div class="mb-4">
+            <div class="muted small mb-1">Teacher Feedback</div>
+            <p class="small text-muted" th:text="${submission.feedback != null ? submission.feedback : 'No feedback provided yet. Your teacher will evaluate your work soon.'}"></p>
+          </div>
+
+          <div class="mb-4" th:if="${submission.aiFeedbackSuggestion != null}">
+            <div class="muted small mb-1">AI Diagnostic Suggestions</div>
+            <div class="small text-muted bg-primary-light p-2" style="border-radius: 4px; border-left: 3px solid var(--primary);" 
+                 th:text="${submission.aiFeedbackSuggestion}">
+              AI recommendations...
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

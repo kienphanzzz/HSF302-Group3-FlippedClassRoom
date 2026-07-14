@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Joined Classes')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Joined Classes', content=~{::content})}">
+  <div th:fragment="content">
+    <section class="mb-4">
+      <h1 class="h2 mb-2">My Enrolled Courses</h1>
+      <p class="muted">Access learning nodes, slides, videos, assignments, and AI-generated practice materials for your classes.</p>
+    </section>
+
+    <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+      <!-- Loop Enrolled Classes -->
+      <article class="card card-pad" th:each="classroom, stat : ${classes}" style="position: relative; border-left: 6px solid var(--primary);">
+        <div class="flex items-center justify-between mb-3">
+          <span class="tag tag-primary" th:text="${classroom.classCode}">SE2024</span>
+          <span class="tag tag-green" th:text="${classroom.subjectCode ?: 'SWE'}">SWE301</span>
+        </div>
+        <h2 class="h3 font-extrabold mb-1" th:text="${classroom.className}">Software Engineering</h2>
+        <div class="small muted mb-3" th:text="'Teacher: ' + ${classroom.teacher.fullName}">Prof. Tran Phuong</div>
+        <p class="small text-muted mb-4" th:text="${classroom.description ?: 'No class description available.'}"></p>
+        <div class="flex items-center justify-between">
+          <a th:href="@{/student/classes/{id}(id=${classroom.classId})}" class="btn btn-primary btn-sm">Enter Learning Path <i data-lucide="arrow-right" style="width:14px;height:14px"></i></a>
+        </div>
+      </article>
+
+      <!-- Empty state -->
+      <div class="card card-pad text-center" th:if="${#lists.isEmpty(classes)}" style="grid-column: 1 / -1;">
+        <div style="font-size: 2.5rem; color: var(--muted);" class="mb-2"><i data-lucide="folder-open"></i></div>
+        <p class="muted">You are not enrolled in any classes yet.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

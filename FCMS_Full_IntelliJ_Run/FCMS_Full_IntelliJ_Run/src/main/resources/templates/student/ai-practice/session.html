@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Practice Session')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Practice Session', content=~{::content})}">
+  <div th:fragment="content">
+    <style>
+      .chat-layout {
+        max-width: 720px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .chat-bubble-assistant {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(15, 23, 36, 0.02);
+        flex: 1;
+      }
+      .question-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 16px;
+        background: #fdfdfd;
+        transition: all 0.2s ease;
+      }
+      .question-card:hover {
+        box-shadow: 0 4px 12px rgba(15,23,36,0.03);
+      }
+      .options-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin: 12px 0;
+      }
+      .option-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        font-size: 13.5px;
+      }
+      .option-badge {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--secondary);
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 11px;
+        flex-shrink: 0;
+      }
+      .banner-settings {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .setting-tag {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 750;
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .graded-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11.5px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 8px;
+      }
+      .graded-badge.correct {
+        background: #e6f4ea;
+        color: var(--green);
+      }
+      .graded-badge.incorrect {
+        background: #fdf2f2;
+        color: var(--red);
+      }
+      .question-correct {
+        border-left: 6px solid #22c55e !important;
+      }
+      .question-wrong {
+        border-left: 6px solid #ef4444 !important;
+      }
+      .question-revealed {
+        border-left: 6px solid #64748b !important;
+      }
+      .answer-radio {
+        display: none;
+      }
+      .answer-option {
+        display: block;
+        padding: 14px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: 0.2s;
+        margin-top: 4px;
+        font-weight: 500;
+      }
+      .answer-radio:checked + .answer-option {
+        border-color: #2563eb;
+        background: #eff6ff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+      .composer-select {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 13px;
+        outline: none;
+      }
+      .composer-textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 13.5px;
+        outline: none;
+        resize: vertical;
+        line-height: 1.5;
+        background: #fff;
+      }
+    </style>
+
+    <!-- Warnings Alert -->
+    <div class="card card-pad mb-4 bg-orange-light border-orange text-accent flex items-start gap-3" style="max-width: 720px; margin: 0 auto 1.5rem;">
+      <i data-lucide="alert-triangle" style="width:22px;height:22px;flex-shrink:0;"></i>
+      <div>
+        <strong style="display:block;" class="mb-1">Self-Study Warning</strong>
+        <span class="small font-bold">AI practice is for self-study only and does not affect official grades.</span>
+      </div>
+    </div>
+
+    <!-- ChatGPT-style Conversational Chat Layout -->
+    <div class="chat-layout">
+      
+      <!-- 1. User Prompt Chat Bubble (Right Aligned) -->
+      <div class="msg user">
+        <div class="msg-avatar">U</div>
+        <div class="bubble">
+          <div class="small muted mb-1" style="color: rgba(255, 255, 255, 0.7); font-weight: 700;">Instructions Submitted:</div>
+          <p class="mb-0" style="font-weight: 600;" th:text="${!#strings.isEmpty(practiceSession.customPrompt) ? practiceSession.customPrompt : 'Generate practice questions from this learning material.'}"></p>
+        </div>
+      </div>
+
+      <!-- 2. AI Assistant response bubble (Left Aligned) -->
+      <div class="msg">
+        <div class="msg-avatar" style="background: var(--purple); color: white;"><i data-lucide="cpu" style="width: 17px; height: 17px;"></i></div>
+        <div class="chat-bubble-assistant">
+          
+          <!-- Summary card / Progress stats -->
+          <div class="card card-pad mb-4 bg-slate-light" style="border-radius: 16px; border: 1px solid var(--border); background-color: #f8fafc; padding: 16px;">
+            <div class="flex items-center justify-between flex-wrap gap-3" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 class="font-bold text-primary mb-1" style="display:flex; align-items:center; gap:5px; font-size:14px; margin-top:0;">
+                  <i data-lucide="activity" style="width:16px;height:16px;"></i> Progress Summary
+                </h3>
+                <div class="small text-muted" style="font-size:12.5px;">
+                  Answered: <strong th:text="|${answeredCount} / ${practiceSession.totalQuestions}|">0/5</strong> &middot; 
+                  Correct: <strong class="text-green" th:text="${correctCount}">0</strong> &middot; 
+                  Accuracy: <strong class="text-primary" th:text="|${accuracy}%|">0%</strong> &middot;
+                  Revealed: <strong class="text-accent" th:text="${revealedCount}">0</strong>
+                </div>
+              </div>
+              
+              <form th:action="@{/student/ai-practice/{sessionId}/finish(sessionId=${practiceSession.practiceSessionId})}" method="POST" th:if="${completed == false}">
+                <button type="submit" class="btn btn-primary btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 16px;">
+                  <i data-lucide="check-square" style="width:16px;height:16px;"></i> Finish Practice
+                </button>
+              </form>
+
+              <div th:if="${completed == true}">
+                <a th:href="@{/student/ai-practice/{sessionId}/result(sessionId=${practiceSession.practiceSessionId})}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 16px;">
+                  <i data-lucide="award" style="width:16px;height:16px;"></i> View Result Dashboard
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Material Details Header -->
+          <div class="banner-settings">
+            <span class="setting-tag"><i data-lucide="file-text" style="width:11px;height:11px"></i> <span th:text="${practiceSession.sourceTitle}">Use Case</span></span>
+            <span class="setting-tag"><i data-lucide="tag" style="width:11px;height:11px"></i> <span th:text="${practiceSession.sourceType}">UPLOADED_FILE</span></span>
+            <span class="setting-tag"><i data-lucide="bar-chart" style="width:11px;height:11px"></i> <span th:text="${practiceSession.difficulty}">MEDIUM</span></span>
+            <span class="setting-tag"><i data-lucide="help-circle" style="width:11px;height:11px"></i> <span th:text="${practiceSession.questionType}">MCQ</span></span>
+          </div>
+
+          <h2 class="h2 mb-3" style="font-size: 17px; font-weight: 800; color: var(--primary);">Practice Questions</h2>
+          
+          <!-- Non-linear Questions Cards List -->
+          <div class="flex flex-col gap-4" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="question-card" th:each="q, stat : ${questions}" th:id="|question-${q.practiceQuestionId}|" th:classappend="${q.statusClass}">
+              
+              <div class="flex items-center justify-between mb-2" style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="tag tag-primary" th:text="|Question ${stat.index + 1}|">Question 1</span>
+                
+                <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 8px;">
+                  <span class="graded-badge correct" th:if="${q.isCorrect == true}"><i data-lucide="check" style="width:13px;height:13px;"></i> Đúng</span>
+                  <span class="graded-badge incorrect" th:if="${q.isCorrect == false}"><i data-lucide="x" style="width:13px;height:13px;"></i> Sai</span>
+                  <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.revealed == true}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
+                  <span class="small muted" th:text="${q.questionType}" style="font-size: 12px; color:#64748b;">MCQ</span>
+                </div>
+              </div>
+
+              <p class="mb-3" style="font-weight: 750; white-space: pre-line; line-height: 1.5; font-size:14.5px; color: var(--text);" th:text="${q.questionContent}">Question Content...</p>
+
+              <!-- MCQ Options List -->
+              <div class="options-grid" th:if="${q.questionType == 'MCQ'}">
+                <div class="option-item" th:if="${!#strings.isEmpty(q.optionA)}">
+                  <span class="option-badge">A</span> <span th:text="${q.optionA}">Option A</span>
+                </div>
+                <div class="option-item" th:if="${!#strings.isEmpty(q.optionB)}">
+                  <span class="option-badge">B</span> <span th:text="${q.optionB}">Option B</span>
+                </div>
+                <div class="option-item" th:if="${!#strings.isEmpty(q.optionC)}">
+                  <span class="option-badge">C</span> <span th:text="${q.optionC}">Option C</span>
+                </div>
+                <div class="option-item" th:if="${!#strings.isEmpty(q.optionD)}">
+                  <span class="option-badge">D</span> <span th:text="${q.optionD}">Option D</span>
+                </div>
+              </div>
+
+              <!-- Input Form (only show if not completed and (unanswered or incorrect) and not revealed) -->
+              <div th:if="${completed == false && (q.isCorrect == null || q.isCorrect == false) && q.revealed != true}" class="mt-3 p-3" style="border-radius:12px; border:1px solid var(--border); background-color: #f8fafc; margin-top:12px;">
+                <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/answer(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST">
+                  <div class="form-group mb-2">
+                    <label class="label small" style="font-weight:700; margin-bottom:4px;" th:text="${q.isCorrect == false} ? 'Try Again: Your Answer' : 'Your Answer'">Your Answer</label>
+                    
+                    <!-- MCQ Radio Card Options -->
+                    <div class="mcq-options-container" th:if="${q.questionType == 'MCQ'}" style="display:flex; flex-direction:column; gap:8px; margin-top:8px; margin-bottom:12px;">
+                      <div th:if="${!#strings.isEmpty(q.optionA)}">
+                        <input class="answer-radio" type="radio" name="studentAnswer" value="A" th:id="|q${q.practiceQuestionId}A|" required>
+                        <label class="answer-option" th:for="|q${q.practiceQuestionId}A|" th:text="|A. ${q.optionA}|"></label>
+                      </div>
+                      <div th:if="${!#strings.isEmpty(q.optionB)}">
+                        <input class="answer-radio" type="radio" name="studentAnswer" value="B" th:id="|q${q.practiceQuestionId}B|" required>
+                        <label class="answer-option" th:for="|q${q.practiceQuestionId}B|" th:text="|B. ${q.optionB}|"></label>
+                      </div>
+                      <div th:if="${!#strings.isEmpty(q.optionC)}">
+                        <input class="answer-radio" type="radio" name="studentAnswer" value="C" th:id="|q${q.practiceQuestionId}C|" required>
+                        <label class="answer-option" th:for="|q${q.practiceQuestionId}C|" th:text="|C. ${q.optionC}|"></label>
+                      </div>
+                      <div th:if="${!#strings.isEmpty(q.optionD)}">
+                        <input class="answer-radio" type="radio" name="studentAnswer" value="D" th:id="|q${q.practiceQuestionId}D|" required>
+                        <label class="answer-option" th:for="|q${q.practiceQuestionId}D|" th:text="|D. ${q.optionD}|"></label>
+                      </div>
+                    </div>
+
+                    <!-- TRUE_FALSE select -->
+                    <select name="studentAnswer" class="composer-select" required th:if="${q.questionType == 'TRUE_FALSE'}">
+                      <option value="">-- Choose Answer --</option>
+                      <option value="TRUE">True</option>
+                      <option value="FALSE">False</option>
+                    </select>
+
+                    <!-- SHORT_ANSWER textarea -->
+                    <textarea name="studentAnswer" class="composer-textarea" rows="2" style="border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fff;" placeholder="Type answer here (min 5 characters)..." required th:if="${q.questionType == 'SHORT_ANSWER'}"></textarea>
+                  </div>
+
+                  <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button type="submit" class="btn btn-primary btn-sm flex-1"><i data-lucide="check"></i> Kiểm tra đáp án</button>
+                  </div>
+                </form>
+
+                <!-- Reveal Answer Form (Un-nested Sibling Form) -->
+                <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/reveal(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST" style="margin-top: 8px;">
+                  <button type="submit" class="btn btn-outline btn-sm w-full"><i data-lucide="eye"></i> Hiện đáp án</button>
+                </form>
+              </div>
+
+              <!-- Feedback area (show if answered or revealed) -->
+              <div th:if="${!#strings.isEmpty(q.studentAnswer) or q.revealed == true}" style="margin-top:12px;">
+                <!-- Graded Badge inside Feedback Block -->
+                <div class="mb-2">
+                  <span class="graded-badge correct" th:if="${q.isCorrect == true}"><i data-lucide="check" style="width:13px;height:13px;"></i> Đúng</span>
+                  <span class="graded-badge incorrect" th:if="${q.isCorrect == false}"><i data-lucide="x" style="width:13px;height:13px;"></i> Sai</span>
+                  <span class="graded-badge" style="background:#f1f5f9; color:#475569;" th:if="${q.revealed == true}"><i data-lucide="eye" style="width:13px;height:13px;"></i> Revealed</span>
+                </div>
+
+                <!-- Answer comparison -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border);" class="mb-3">
+                  <div class="small">
+                    <span class="muted block small font-bold" style="font-size:11px; color:#64748b;">Your Answer:</span>
+                    <strong th:text="${!#strings.isEmpty(q.studentAnswer) ? q.studentAnswer : '(Not answered)'}">A</strong>
+                  </div>
+                  <div class="small">
+                    <span class="muted block small font-bold" style="font-size:11px; color:#64748b;">Correct Answer:</span>
+                    <strong class="text-green" th:text="${q.correctAnswer}">A</strong>
+                  </div>
+                </div>
+
+                <!-- AI Explanation -->
+                <div class="p-3 mb-3" style="background: rgba(26, 115, 232, 0.04); border-radius: 8px; border: 1px dashed rgba(26, 115, 232, 0.2); padding: 12px; margin-bottom: 12px;">
+                  <span class="small font-bold text-primary block mb-1" style="font-size:12px; display:block; margin-bottom:4px;">AI Explanation:</span>
+                  <p class="small mb-0" style="line-height: 1.5; color:#475569; font-size:12.5px; margin:0;" th:text="${q.explanation}">Explanation content...</p>
+                </div>
+
+                <!-- Follow-up Chats Section -->
+                <div class="p-3 mt-3" style="border-radius:12px; border: 1px solid var(--border); background-color: #f8fafc; padding: 12px; margin-top:12px;">
+                  <h4 class="small font-bold text-primary mb-2" style="display:flex; align-items:center; gap:5px; font-size:13px; margin: 0 0 10px 0;">
+                    <i data-lucide="messages-square" style="width:14px;height:14px;"></i> Follow-up Chat
+                  </h4>
+
+                  <!-- Chat Logs -->
+                  <div class="chats-thread mb-3" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 12px;">
+                    <!-- Loop through chats directly bound to this question -->
+                    <div th:if="${q.chats != null and !#lists.isEmpty(q.chats)}">
+                      <div th:each="chat : ${q.chats}" class="flex flex-col gap-1" style="display:flex; flex-direction:column; gap:4px; margin-bottom: 10px;">
+                        <div class="user-msg p-2 bg-primary-light" style="border-radius:8px; align-self:flex-end; max-width:85%; font-size:12px; border:1px solid rgba(26, 115, 232, 0.1); padding:8px; background-color: #e8f0fe; margin-left: auto;">
+                          <strong style="color:var(--primary);">You:</strong> <span th:text="${chat.userMessage}">Question...</span>
+                        </div>
+                        <div class="ai-msg p-2 bg-white" style="border-radius:8px; align-self:flex-start; max-width:85%; font-size:12px; border:1px solid var(--border); line-height:1.5; white-space: pre-line; padding:8px; background-color: #ffffff; margin-right: auto;">
+                          <strong style="color:var(--purple);">AI:</strong> <span th:text="${chat.aiResponse}">Explanation...</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div th:if="${q.chats == null or #lists.isEmpty(q.chats)}" class="small muted text-center py-2" style="text-align: center; color:#64748b; font-size:12px; padding: 8px 0;">
+                      No follow-up questions asked yet.
+                    </div>
+                  </div>
+
+                  <!-- Ask AI Form (Only if not completed) -->
+                  <form th:action="@{/student/ai-practice/{sessionId}/questions/{questionId}/ask(sessionId=${practiceSession.practiceSessionId}, questionId=${q.practiceQuestionId})}" method="POST" th:if="${completed == false}">
+                    <div class="form-group mb-2" style="margin-bottom:8px;">
+                      <textarea name="followUpPrompt" class="composer-textarea" rows="2" style="border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fff; font-size:12.5px; width:100%; box-sizing: border-box;" placeholder="Hỏi AI về câu này, ví dụ: Tại sao đáp án A đúng?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-soft btn-sm w-full" style="width:100%;"><i data-lucide="send" style="width:12px;height:12px;"></i> Hỏi AI</button>
+                  </form>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Footer navigation options -->
+          <div class="flex items-center gap-3 mt-4" style="border-top:1px solid var(--border); padding-top: 16px; display: flex; gap: 12px; margin-top: 16px;">
+            <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm flex-1" style="flex:1;"><i data-lucide="zap" style="width: 14px; height: 14px;"></i> Generate New Practice</a>
+            <a th:href="@{/student/ai-practice/history}" class="btn btn-outline btn-sm"><i data-lucide="history" style="width: 14px; height: 14px;"></i> View History</a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

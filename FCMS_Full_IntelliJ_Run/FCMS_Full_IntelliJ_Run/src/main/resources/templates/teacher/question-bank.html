@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Question Bank')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Question Bank', content=~{::content})}">
+  <div th:fragment="content">
+    <style>
+      .question-card {
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 20px rgba(15, 23, 36, 0.02);
+        padding: 20px;
+        margin-bottom: 1.25rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .question-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 30px rgba(15, 23, 36, 0.04);
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 36, 0.4);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      .modal.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 580px;
+        box-shadow: var(--shadow);
+        padding: 24px;
+        transform: translateY(20px);
+        transition: transform 0.2s ease;
+      }
+      .modal.active .modal-content {
+        transform: translateY(0);
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .modal-title {
+        font-size: 18px;
+        font-weight: 850;
+      }
+      .modal-close {
+        cursor: pointer;
+        color: var(--muted);
+      }
+      .modal-close:hover {
+        color: var(--text);
+      }
+      .option-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .option-input-row input[type="text"] {
+        flex: 1;
+      }
+    </style>
+
+    <div class="page-title-row">
+      <div>
+        <h1 class="h2 mb-1">Question Repository</h1>
+        <p class="muted">Manage exam questions or auto-generate mock practice quizzes using AI.</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-outline" onclick="openModal('ai-generate-modal')">
+          <i data-lucide="sparkles" style="color: #7c3aed;"></i> Generate with AI
+        </button>
+        <button class="btn btn-primary" onclick="openModal('add-question-modal')">
+          <i data-lucide="plus"></i> Add Question
+        </button>
+      </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    <div th:if="${successMessage}" class="card card-pad mb-4 flex items-center gap-3" style="background:#e6f4ea; border-color:#bbf7d0; color:var(--green)">
+      <i data-lucide="check-circle-2"></i>
+      <span th:text="${successMessage}">Success!</span>
+    </div>
+    <div th:if="${errorMessage}" class="card card-pad mb-4 flex items-center gap-3" style="background:#fdf2f2; border-color:#fecaca; color:var(--red)">
+      <i data-lucide="alert-circle"></i>
+      <span th:text="${errorMessage}">Error!</span>
+    </div>
+
+    <!-- Filters Row -->
+    <div class="flex items-center justify-between gap-4 mb-4 flex-wrap" style="background:#f8fafc; padding:12px 16px; border-radius:12px; border:1px solid var(--border);">
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span class="small font-bold text-muted">Type:</span>
+          <select id="filterType" onchange="filterQuestions()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:700;">
+            <option value="ALL">All Types</option>
+            <option value="MCQ">Multiple Choice (MCQ)</option>
+            <option value="TRUE_FALSE">True / False</option>
+            <option value="SHORT_ANSWER">Short Answer</option>
+            <option value="ESSAY">Essay</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="small font-bold text-muted">Difficulty:</span>
+          <select id="filterDifficulty" onchange="filterQuestions()" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:700;">
+            <option value="ALL">All Difficulties</option>
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
+        </div>
+      </div>
+      <div style="position:relative; width: 100%; max-width: 260px;">
+        <i data-lucide="search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--muted)"></i>
+        <input type="text" id="searchQuestionInput" onkeyup="filterQuestions()" placeholder="Search questions..." style="width:100%; padding:7px 10px 7px 32px; font-size:12.5px; border-radius:8px; border:1px solid var(--border); outline:none;" />
+      </div>
+    </div>
+
+    <!-- Questions list container -->
+    <div id="questionsContainer">
+      <div th:each="question : ${questions}" class="question-item question-card" th:data-type="${question.questionType}" th:data-difficulty="${question.difficulty}">
+        <div class="flex justify-between items-start gap-4">
+          <div style="flex:1; min-width:0;">
+            <div class="flex items-center gap-2 flex-wrap mb-2">
+              <span th:style="${question.difficulty == 'EASY'} ? 'background:#e6f4ea; color:var(--green); font-size:10px; padding:3px 8px; border-radius:6px; font-weight:700;' : (${question.difficulty == 'MEDIUM'} ? 'background:#fff8e6; color:var(--orange); font-size:10px; padding:3px 8px; border-radius:6px; font-weight:700;' : 'background:#fde8e8; color:var(--red); font-size:10px; padding:3px 8px; border-radius:6px; font-weight:700;')" th:text="${question.difficulty}">MEDIUM</span>
+              <span class="tag tag-primary" style="font-size:10px;" th:text="${question.questionType}">MCQ</span>
+              <span class="tag tag-purple" th:if="${question.sourceType == 'AI_GENERATED'}" style="font-size:10px; background:purple; color:#fff"><i data-lucide="sparkles" style="width:10px;height:10px;display:inline;"></i> AI</span>
+              <span class="small muted" th:if="${question.learningNode != null}" th:text="|Topic: ${question.learningNode.title}|">Topic: Basic</span>
+            </div>
+            
+            <p style="font-weight:700; font-size:15px; margin-bottom:0.75rem; color:var(--text); line-height:1.5;" th:text="${question.questionContent}">Question Content</p>
+            
+            <!-- MCQ Options list if present -->
+            <div th:if="${question.questionType == 'MCQ'}" class="flex flex-col gap-2 mb-3 pl-2">
+              <div th:each="opt, iterStat : ${question.options}" class="flex items-center gap-2 small">
+                <span th:style="${opt.isCorrect} ? 'color:var(--green); font-weight:800;' : 'color:var(--muted);'" th:text="${(iterStat.index == 0 ? 'A. ' : (iterStat.index == 1 ? 'B. ' : (iterStat.index == 2 ? 'C. ' : 'D. '))) + opt.optionText}">Option text</span>
+                <i data-lucide="check" th:if="${opt.isCorrect}" style="width:12px;height:12px;color:var(--green)"></i>
+              </div>
+            </div>
+
+            <!-- Answer display for non-MCQ -->
+            <div th:if="${question.questionType != 'MCQ'}" class="small mb-3">
+              <span class="font-bold text-muted">Correct Answer:</span> <code th:text="${question.correctAnswer}">Answer</code>
+            </div>
+
+            <div class="small bg-secondary card-pad mt-2 text-muted" style="border-radius:10px;" th:if="${!#strings.isEmpty(question.explanation)}">
+              <strong style="display:block;" class="mb-1">Explanation:</strong>
+              <span th:text="${question.explanation}">explanation</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="flex-shrink:0;">
+            <form th:action="@{/teacher/question-bank/{id}/delete(id=${question.questionId})}" method="post" onsubmit="return confirm('Delete this question from your bank?')">
+              <button type="submit" class="icon-btn text-red" title="Delete Question">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty list state -->
+      <div id="emptyQuestionState" class="card card-pad text-center py-5" th:if="${#lists.isEmpty(questions)}">
+        <div style="font-size:42px; color:var(--muted); margin-bottom:12px;"><i data-lucide="help-circle"></i></div>
+        <h3 class="h3">Your Question Bank is Empty</h3>
+        <p class="muted small mb-4">Add your first question manually or use AI to generate questions from curriculum topics.</p>
+        <button class="btn btn-primary" onclick="openModal('add-question-modal')"><i data-lucide="plus"></i> Add Question</button>
+      </div>
+      <div id="noSearchQuestionState" class="card card-pad text-center py-5" style="display:none;">
+        <div style="font-size:32px; color:var(--muted);"><i data-lucide="folder-open"></i></div>
+        <p style="font-weight:700;" class="mt-2">No matching questions found.</p>
+      </div>
+    </div>
+
+    <!-- Manual Add Question Modal -->
+    <div id="add-question-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Add Manual Question</h3>
+          <i data-lucide="x" class="modal-close" onclick="closeModal('add-question-modal')"></i>
+        </div>
+        <form th:action="@{/teacher/question-bank/create}" method="post">
+          <div class="form-group mb-3">
+            <label class="label">Question Text *</label>
+            <textarea class="textarea" name="questionContent" rows="3" required placeholder="Enter the question contents here..."></textarea>
+          </div>
+
+          <div class="grid grid-3 mb-3">
+            <div class="form-group">
+              <label class="label">Type *</label>
+              <select class="select" name="questionType" id="modalTypeSelector" onchange="toggleModalMcqGroup(this.value)">
+                <option value="MCQ">MCQ</option>
+                <option value="TRUE_FALSE">True / False</option>
+                <option value="SHORT_ANSWER">Short Answer</option>
+                <option value="ESSAY">Essay</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="label">Difficulty *</label>
+              <select class="select" name="difficulty">
+                <option value="EASY">Easy</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HARD">Hard</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="label">Linked Topic</label>
+              <select class="select" name="nodeId">
+                <option value="">None</option>
+                <option th:each="t : ${topics}" th:value="${t.nodeId}" th:text="|${t.classRoom.className} - ${t.title}|">Topic 1</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Dynamic MCQ Options group -->
+          <div id="modalMcqOptionsGroup" class="mb-3">
+            <label class="label">Answer Options (Select the correct one) *</label>
+            <div class="option-input-row">
+              <input type="radio" name="correctOptionIndex" value="0" checked />
+              <input type="text" class="input" name="options" placeholder="Option A" />
+            </div>
+            <div class="option-input-row">
+              <input type="radio" name="correctOptionIndex" value="1" />
+              <input type="text" class="input" name="options" placeholder="Option B" />
+            </div>
+            <div class="option-input-row">
+              <input type="radio" name="correctOptionIndex" value="2" />
+              <input type="text" class="input" name="options" placeholder="Option C" />
+            </div>
+            <div class="option-input-row">
+              <input type="radio" name="correctOptionIndex" value="3" />
+              <input type="text" class="input" name="options" placeholder="Option D" />
+            </div>
+          </div>
+
+          <!-- Plain answer input for non-MCQ -->
+          <div id="modalPlainAnswerGroup" class="form-group mb-3" style="display:none;">
+            <label class="label">Correct Answer *</label>
+            <input type="text" class="input" name="correctAnswer" placeholder="e.g. True, or short answer value" />
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="label">Explanation (Optional)</label>
+            <textarea class="textarea" name="explanation" rows="2" placeholder="Brief rationale or details about the answer..."></textarea>
+          </div>
+
+          <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('add-question-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save to Bank</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- AI Generate Questions Modal -->
+    <div id="ai-generate-modal" class="modal">
+      <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+          <h3 class="modal-title"><i data-lucide="sparkles" style="color:#7c3aed; display:inline;"></i> Generate Questions with AI</h3>
+          <i data-lucide="x" class="modal-close" onclick="closeModal('ai-generate-modal')"></i>
+        </div>
+        <form th:action="@{/teacher/question-bank/generate}" method="post">
+          <p class="small muted mb-3">AI will auto-generate 3 high-quality practice questions based on the class curriculum topic of your choice.</p>
+          
+          <div class="form-group mb-3">
+            <label class="label">Select Topic from Classrooms</label>
+            <select class="select" name="nodeId" id="aiTopicSelect" onchange="toggleAiCustomTopic(this.value)">
+              <option value="">-- Custom Topic Name --</option>
+              <option th:each="t : ${topics}" th:value="${t.nodeId}" th:text="|${t.classRoom.className} · ${t.title}|">Topic 1</option>
+            </select>
+          </div>
+
+          <div class="form-group mb-4" id="aiCustomTopicGroup">
+            <label class="label">Enter Custom Topic Name *</label>
+            <input type="text" class="input" name="topicName" id="aiCustomTopicInput" required placeholder="e.g. Binary Search Trees" />
+          </div>
+
+          <div class="flex justify-end gap-2">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('ai-generate-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm"><i data-lucide="sparkles"></i> Generate</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script th:replace="~{fragments/layout :: scripts}"></script>
+<script>
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  }
+
+  function toggleModalMcqGroup(type) {
+    const mcqGroup = document.getElementById('modalMcqOptionsGroup');
+    const plainGroup = document.getElementById('modalPlainAnswerGroup');
+    const optionsInputs = mcqGroup.querySelectorAll('input[type="text"]');
+    const plainInput = plainGroup.querySelector('input');
+
+    if (type === 'MCQ') {
+      mcqGroup.style.display = '';
+      plainGroup.style.display = 'none';
+      optionsInputs.forEach(i => i.setAttribute('required', 'required'));
+      plainInput.removeAttribute('required');
+    } else {
+      mcqGroup.style.display = 'none';
+      plainGroup.style.display = '';
+      optionsInputs.forEach(i => i.removeAttribute('required'));
+      plainInput.setAttribute('required', 'required');
+    }
+  }
+
+  function toggleAiCustomTopic(nodeId) {
+    const customGroup = document.getElementById('aiCustomTopicGroup');
+    const customInput = document.getElementById('aiCustomTopicInput');
+    if (nodeId && nodeId !== "") {
+      customGroup.classList.add('hidden');
+      customInput.removeAttribute('required');
+    } else {
+      customGroup.classList.remove('hidden');
+      customInput.setAttribute('required', 'required');
+    }
+  }
+
+  function filterQuestions() {
+    const typeFilter = document.getElementById('filterType').value;
+    const diffFilter = document.getElementById('filterDifficulty').value;
+    const searchVal = document.getElementById('searchQuestionInput').value.toLowerCase().trim();
+    const items = document.querySelectorAll('.question-item');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+      const type = item.getAttribute('th:data-type') || item.getAttribute('data-type');
+      const difficulty = item.getAttribute('th:data-difficulty') || item.getAttribute('data-difficulty');
+      const text = item.innerText.toLowerCase();
+
+      const matchesType = (typeFilter === 'ALL' || type === typeFilter);
+      const matchesDiff = (diffFilter === 'ALL' || difficulty === diffFilter);
+      const matchesSearch = text.includes(searchVal);
+
+      if (matchesType && matchesDiff && matchesSearch) {
+        item.style.display = '';
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    const emptyState = document.getElementById('emptyQuestionState');
+    const noSearchState = document.getElementById('noSearchQuestionState');
+    
+    if (visibleCount === 0) {
+      if (searchVal !== "" || typeFilter !== 'ALL' || diffFilter !== 'ALL') {
+        noSearchState.style.display = '';
+        if (emptyState) emptyState.style.display = 'none';
+      } else {
+        noSearchState.style.display = 'none';
+        if (emptyState) emptyState.style.display = '';
+      }
+    } else {
+      noSearchState.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'none';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    toggleModalMcqGroup('MCQ');
+  });
+</script>
+</body>
+</html>

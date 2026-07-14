@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Assignments')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Assignments', content=~{::content})}">
+  <div th:fragment="content">
+    <div class="flex justify-center mb-4">
+      <div class="switcher">
+        <a class="active" th:href="@{/student/assignments}">Assignments</a>
+        <a th:href="@{/student/submissions}">Submissions History</a>
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h1 class="h2 mb-2">Class Assignments</h1>
+      <p class="muted">Check deadlines and submit your pre-class assignments. Late submissions are subject to class policy.</p>
+    </section>
+
+    <!-- Assignments Table / List -->
+    <div class="card">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Assignment</th>
+              <th>Class</th>
+              <th>Deadline</th>
+              <th>Max Score</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Loop Assignments -->
+            <tr th:each="assignment : ${assignments}">
+              <td>
+                <div style="font-weight: 750;" th:text="${assignment.title}">SRS Assignment</div>
+                <div class="small muted truncate" style="max-width: 320px;" th:text="${assignment.description}">Description</div>
+              </td>
+              <td>
+                <span class="tag tag-primary" th:text="${assignment.learningNode.classRoom.classCode}">SE2024</span>
+              </td>
+              <td>
+                <span class="text-accent" style="font-weight: 600;" th:text="${#temporals.format(assignment.deadline, 'MMM dd, yyyy HH:mm')}">Dec 20, 2025</span>
+              </td>
+              <td>
+                <strong th:text="${assignment.maxScore}">10.00</strong>
+              </td>
+              <td>
+                <a th:href="@{/student/assignments/{id}(id=${assignment.assignmentId})}" class="btn btn-soft btn-sm flex items-center gap-1">
+                  View & Submit <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+                </a>
+              </td>
+            </tr>
+
+            <!-- Empty state -->
+            <tr th:if="${#lists.isEmpty(assignments)}">
+              <td colspan="5" class="text-center muted p-4">
+                <div style="font-size: 2rem;" class="mb-2"><i data-lucide="info"></i></div>
+                No assignments found for your enrolled classes.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>

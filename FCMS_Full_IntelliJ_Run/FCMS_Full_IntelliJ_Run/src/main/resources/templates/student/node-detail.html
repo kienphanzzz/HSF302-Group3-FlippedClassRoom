@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Topic Detail')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Topic Detail', content=~{::content})}">
+  <div th:fragment="content">
+    <!-- Alerts -->
+    <div class="card card-pad mb-4 flex items-start gap-3" style="background-color: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;" th:if="${errorMessage}">
+      <i data-lucide="alert-circle" style="flex-shrink:0;"></i>
+      <span class="small font-bold" th:text="${errorMessage}">Something went wrong.</span>
+    </div>
+    <div class="card card-pad mb-4 flex items-start gap-3" style="background-color: #f3faf5; border: 1px solid #c2ebd0; color: #1e7e34;" th:if="${successMessage}">
+      <i data-lucide="check-circle" style="flex-shrink:0;"></i>
+      <span class="small font-bold" th:text="${successMessage}">Success!</span>
+    </div>
+    <!-- Node Header -->
+    <section class="card card-pad mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="tag tag-primary" th:text="${node.classRoom.classCode}">SE2024</span>
+        <span class="text-accent small font-bold">PRE-CLASS TOPIC</span>
+      </div>
+      <h1 class="h2 mb-2" th:text="${node.title}">Topic 2: Requirements Engineering</h1>
+      <p class="muted" th:text="${node.description}">Detailed overview of requirements engineering.</p>
+    </section>
+
+    <h2 class="h3 mb-3">Topic Materials & Resources</h2>
+    
+    <!-- Materials list -->
+    <div class="flex flex-col gap-4">
+      <article class="card card-pad flex items-start gap-4" th:each="content : ${contents}">
+        <div class="stat-icon" 
+             th:classappend="${content.contentType == 'VIDEO_URL' ? 'bg-primary-light text-primary' : 'bg-cyan-light text-info'}"
+             style="width: 48px; height: 48px; flex-shrink: 0;">
+          <i th:attr="data-lucide=${content.contentType == 'VIDEO_URL' ? 'play-circle' : (content.contentType == 'MEETING_URL' ? 'video' : 'file-text')}"></i>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div class="flex items-center gap-2 mb-1">
+            <h3 class="h3 font-extrabold mb-0" th:text="${content.title}">Use Case Diagrams — Lecture Slides</h3>
+            <span class="tag" 
+                  th:style="${content.contentType == 'VIDEO_URL' ? 'background:rgba(26,115,232,0.1);color:var(--primary)' : 'background:#e0f2f7;color:#0891b2'}" 
+                  th:text="${content.contentType}">DOCUMENT_URL</span>
+          </div>
+          <p class="small text-muted mb-3" th:text="${content.description ?: 'No description available for this resource.'}"></p>
+          <div class="flex items-center gap-4">
+            <span class="small muted" th:if="${content.durationMinutes != null}">
+              <i data-lucide="clock" style="width: 14px; height: 14px; vertical-align: text-bottom;"></i> 
+              Estimated: <span th:text="${content.durationMinutes}">15</span> mins
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-2" style="flex-shrink:0;">
+          <!-- View link -->
+          <a th:href="@{/student/content/{id}(id=${content.contentId})}" target="_blank" class="btn btn-primary btn-sm flex items-center justify-center gap-1">
+            <i data-lucide="external-link" style="width:14px;height:14px"></i> Open Material
+          </a>
+          <!-- Generate Practice form -->
+          <form th:action="@{/student/ai-practice/generate}" method="POST">
+            <input type="hidden" name="contentId" th:value="${content.contentId}" />
+            <input type="hidden" name="difficulty" value="MEDIUM" />
+            <input type="hidden" name="questionType" value="MCQ" />
+            <input type="hidden" name="count" value="5" />
+            <button type="submit" class="btn btn-soft btn-sm flex items-center justify-center gap-1" style="width: 100%;">
+              <i data-lucide="zap" style="width:14px;height:14px"></i> AI Practice
+            </button>
+          </form>
+        </div>
+      </article>
+
+      <!-- Empty state -->
+      <div class="card card-pad text-center p-5" th:if="${#lists.isEmpty(contents)}">
+        <div style="font-size: 3rem; color: var(--muted);" class="mb-3"><i data-lucide="info"></i></div>
+        <h3 class="h3">No materials uploaded yet</h3>
+        <p class="muted">Your teacher has not uploaded any study resources for this learning node.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>
