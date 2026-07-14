@@ -4,6 +4,15 @@
 <body>
 <div th:replace="~{fragments/layout :: page(title='Topic Detail', content=~{::content})}">
   <div th:fragment="content">
+    <!-- Alerts -->
+    <div class="card card-pad mb-4 flex items-start gap-3" style="background-color: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;" th:if="${errorMessage}">
+      <i data-lucide="alert-circle" style="flex-shrink:0;"></i>
+      <span class="small font-bold" th:text="${errorMessage}">Something went wrong.</span>
+    </div>
+    <div class="card card-pad mb-4 flex items-start gap-3" style="background-color: #f3faf5; border: 1px solid #c2ebd0; color: #1e7e34;" th:if="${successMessage}">
+      <i data-lucide="check-circle" style="flex-shrink:0;"></i>
+      <span class="small font-bold" th:text="${successMessage}">Success!</span>
+    </div>
     <!-- Node Header -->
     <section class="card card-pad mb-4">
       <div class="flex items-center justify-between mb-2">

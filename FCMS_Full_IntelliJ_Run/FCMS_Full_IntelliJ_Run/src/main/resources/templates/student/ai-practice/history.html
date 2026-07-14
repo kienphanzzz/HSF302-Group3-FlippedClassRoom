@@ -5,6 +5,13 @@
 <div th:replace="~{fragments/layout :: page(title='Practice History', content=~{::content})}">
   <div th:fragment="content">
     <style>
+      .assistant-container {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
       .setting-tag {
         background: #f1f5f9;
         color: #475569;
@@ -15,13 +22,6 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-      }
-      .history-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        max-width: 980px;
-        margin: 0 auto;
       }
       .history-card {
         width: 100%;
@@ -49,104 +49,107 @@
       }
     </style>
 
-    <!-- Error Message Alert -->
-    <div class="card card-pad mb-4 flex items-start gap-3" style="max-width: 760px; margin: 0 auto 1.5rem; background-color: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;" th:if="${errorMessage}">
-      <i data-lucide="x-circle" style="width:22px;height:22px;flex-shrink:0;"></i>
-      <div>
-        <strong style="display:block;" class="mb-1">Error</strong>
-        <span class="small font-bold" th:text="${errorMessage}">Something went wrong.</span>
-      </div>
-    </div>
-
-    <!-- Success Message Alert -->
-    <div class="card card-pad mb-4 flex items-start gap-3" style="max-width: 760px; margin: 0 auto 1.5rem; background-color: #f3faf5; border: 1px solid #def7ec; color: #03543f;" th:if="${successMessage}">
-      <i data-lucide="check-circle" style="width:22px;height:22px;flex-shrink:0;"></i>
-      <div>
-        <strong style="display:block;" class="mb-1">Success</strong>
-        <span class="small font-bold" th:text="${successMessage}">Operation completed successfully.</span>
-      </div>
-    </div>
-
-    <!-- Switcher in Page content -->
-    <div class="flex justify-center mb-4">
-      <div class="switcher">
-        <a th:href="@{/student/ai-practice}">AI Practice Setup</a>
-        <a class="active" th:href="@{/student/ai-practice/history}">Practice History</a>
-      </div>
-    </div>
-
-    <section class="mb-4" style="max-width: 980px; margin: 0 auto 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;">
-      <div>
-        <h1 class="h2 mb-2">AI Practice History</h1>
-        <p class="muted">Review your practice results, past questions, and detailed AI explanations.</p>
-      </div>
-      <form th:action="@{/student/ai-practice/history/clear}" method="post" th:if="${not #lists.isEmpty(history)}" style="flex-shrink:0;">
-        <button type="submit" class="btn btn-outline btn-sm text-red" style="border-color: rgba(234, 67, 53, 0.2); background: rgba(234, 67, 53, 0.02); font-weight: 700;" onclick="return confirm('Clear all AI practice history?')">
-          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Clear all history
-        </button>
-      </form>
-    </section>
-
-    <!-- Logs cards grid -->
-    <div class="history-list">
+    <div class="assistant-container">
       
-      <!-- Loop Sessions -->
-      <div class="history-card" th:each="sessionItem : ${history}">
-        <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
-          
-          <!-- Content Area -->
-          <div style="flex: 1; min-width: 280px; display: flex; gap: 16px; align-items: start;">
-            <div class="logo" style="background: var(--purple); color: white; width: 44px; height: 44px; border-radius: 12px; font-weight: 800; display:flex; align-items:center; justify-content:center; flex-shrink: 0; box-shadow: none; margin-top: 2px;">
-              <i data-lucide="message-square" style="width: 22px; height: 22px;"></i>
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <div class="small muted mb-1" th:text="${#temporals.format(sessionItem.createdAt, 'dd/MM/yyyy HH:mm')}">Dec 18, 2025</div>
-              
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
-                <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: var(--primary);" class="text-truncate-1" th:text="${sessionItem.sourceTitle}">Use Case Diagrams</h3>
-                <span class="small font-bold" th:style="${sessionItem.status == 'COMPLETED'} ? 'background:#e6f4ea; color:var(--green); padding:3px 8px; border-radius:6px; font-size:10px;' : (${sessionItem.status == 'IN_PROGRESS'} ? 'background:#fff8e6; color:var(--orange); padding:3px 8px; border-radius:6px; font-size:10px;' : 'background:#e8f0fe; color:var(--primary); padding:3px 8px; border-radius:6px; font-size:10px;')" th:text="${sessionItem.status ?: 'GENERATED'}">GENERATED</span>
-              </div>
-              
-              <p class="muted small mb-3 line-clamp-2" style="font-size: 13px; line-height: 1.5; color: #64748b; margin-top: 4px;" 
-                 th:text="${!#strings.isEmpty(sessionItem.customPrompt) ? sessionItem.customPrompt : 'Generated self-study practice quiz.'}"></p>
-              
-              <!-- Badges -->
-              <div class="flex items-center gap-2 flex-wrap" style="display:flex; flex-wrap:wrap; gap:8px;">
-                <span class="setting-tag"><i data-lucide="file" style="width:10px;height:10px;"></i> <span th:text="${sessionItem.sourceType}">UPLOADED_FILE</span></span>
-                <span class="setting-tag"><i data-lucide="bar-chart-2" style="width:10px;height:10px;"></i> <span th:text="${sessionItem.difficulty}">MEDIUM</span></span>
-                <span class="setting-tag"><i data-lucide="help-circle" style="width:10px;height:10px;"></i> <span th:text="${sessionItem.questionType}">MCQ</span></span>
-                <span class="setting-tag"><i data-lucide="hash" style="width:10px;height:10px;"></i> <span th:text="|${sessionItem.totalQuestions} Questions|">5 Qs</span></span>
-                <span class="setting-tag"><i data-lucide="check-square" style="width:10px;height:10px;"></i> Answered: <span th:text="${sessionItem.answeredCount}">0</span></span>
-                <span class="setting-tag"><i data-lucide="award" style="width:10px;height:10px;"></i> Correct: <span th:text="|${sessionItem.correctCount}/${sessionItem.totalQuestions}|">4/5</span></span>
-                <span class="setting-tag"><i data-lucide="trending-up" style="width:10px;height:10px;"></i> Accuracy: <span th:text="|${sessionItem.accuracy}%|">80%</span></span>
-                <span class="setting-tag"><i data-lucide="eye" style="width:10px;height:10px;"></i> Revealed: <span th:text="${sessionItem.revealedCount}">0</span></span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Actions Area -->
-          <div class="card-actions" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
-            <a th:href="@{/student/ai-practice/{id}(id=${sessionItem.practiceSessionId})}" th:if="${sessionItem.status != 'COMPLETED'}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 14px; background: rgba(26,115,232,0.06); color:var(--primary);">
-              Continue <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
-            </a>
-            <a th:href="@{/student/ai-practice/{id}/result(id=${sessionItem.practiceSessionId})}" th:if="${sessionItem.status == 'COMPLETED'}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 14px; background: rgba(76,175,80,0.06); color:var(--green);">
-              View Result <i data-lucide="award" style="width:14px;height:14px"></i>
-            </a>
-            <form th:action="@{/student/ai-practice/{id}/delete(id=${sessionItem.practiceSessionId})}" method="post" style="display:inline;">
-              <button type="submit" class="btn btn-outline btn-sm text-red" style="border-color: rgba(234, 67, 53, 0.25); background: #fff; padding: 8px 12px; border-radius: 10px; font-weight:700;" onclick="return confirm('Delete this practice session?')">
-                <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px;"></i> Delete
-              </button>
-            </form>
-          </div>
-          
+      <!-- Error Message Alert -->
+      <div class="card card-pad flex items-start gap-3" style="background-color: #fdf2f2; border: 1px solid #f8b4b4; color: #9b1c1c;" th:if="${errorMessage}">
+        <i data-lucide="x-circle" style="width:22px;height:22px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Error</strong>
+          <span class="small font-bold" th:text="${errorMessage}">Something went wrong.</span>
         </div>
       </div>
 
-      <!-- Empty state -->
-      <div class="card card-pad text-center muted" th:if="${#lists.isEmpty(history)}" style="border-radius: 18px; padding: 40px; border: 1px solid #e2e8f0; width: 100%; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06); background: #fff;">
-        <div style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 12px;"><i data-lucide="folder-open"></i></div>
-        <p style="font-weight: 600; color: #64748b;">No practice history found.</p>
-        <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm mt-3" style="font-weight:800; border-radius:10px;"><i data-lucide="plus"></i> Create New Practice</a>
+      <!-- Success Message Alert -->
+      <div class="card card-pad flex items-start gap-3" style="background-color: #f3faf5; border: 1px solid #def7ec; color: #03543f;" th:if="${successMessage}">
+        <i data-lucide="check-circle" style="width:22px;height:22px;flex-shrink:0;"></i>
+        <div>
+          <strong style="display:block;" class="mb-1">Success</strong>
+          <span class="small font-bold" th:text="${successMessage}">Operation completed successfully.</span>
+        </div>
+      </div>
+
+      <!-- Switcher in Page content -->
+      <div class="flex justify-center mb-2">
+        <div class="switcher">
+          <a th:href="@{/student/ai-practice}">AI Practice Setup</a>
+          <a class="active" th:href="@{/student/ai-practice/history}">Practice History</a>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <section class="mb-2" style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;">
+        <div>
+          <h1 class="h2 mb-2">AI Practice History</h1>
+          <p class="muted">Review your practice results, past questions, and detailed AI explanations.</p>
+        </div>
+        <form th:action="@{/student/ai-practice/history/clear}" method="post" th:if="${not #lists.isEmpty(history)}" style="flex-shrink:0;">
+          <button type="submit" class="btn btn-outline btn-sm text-red" style="border-color: rgba(234, 67, 53, 0.2); background: rgba(234, 67, 53, 0.02); font-weight: 700;" onclick="return confirm('Clear all AI practice history?')">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Clear all history
+          </button>
+        </form>
+      </section>
+
+      <!-- Logs cards list -->
+      <div class="flex flex-col gap-4">
+        <!-- Loop Sessions -->
+        <div class="history-card" th:each="sessionItem : ${history}">
+          <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;">
+            
+            <!-- Content Area -->
+            <div style="flex: 1; min-width: 280px; display: flex; gap: 16px; align-items: start;">
+              <div class="logo" style="background: var(--purple); color: white; width: 44px; height: 44px; border-radius: 12px; font-weight: 800; display:flex; align-items:center; justify-content:center; flex-shrink: 0; box-shadow: none; margin-top: 2px;">
+                <i data-lucide="message-square" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="small muted mb-1" th:text="${#temporals.format(sessionItem.createdAt, 'dd/MM/yyyy HH:mm')}">Dec 18, 2025</div>
+                
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+                  <h3 style="font-size: 16px; font-weight: 800; margin: 0; color: var(--primary);" class="text-truncate-1" th:text="${sessionItem.sourceTitle}">Use Case Diagrams</h3>
+                  <span class="small font-bold" th:style="${sessionItem.status == 'COMPLETED'} ? 'background:#e6f4ea; color:var(--green); padding:3px 8px; border-radius:6px; font-size:10px;' : (${sessionItem.status == 'IN_PROGRESS'} ? 'background:#fff8e6; color:var(--orange); padding:3px 8px; border-radius:6px; font-size:10px;' : 'background:#e8f0fe; color:var(--primary); padding:3px 8px; border-radius:6px; font-size:10px;')" th:text="${sessionItem.status ?: 'GENERATED'}">GENERATED</span>
+                </div>
+                
+                <p class="muted small mb-3 line-clamp-2" style="font-size: 13px; line-height: 1.5; color: #64748b; margin-top: 4px;" 
+                   th:text="${!#strings.isEmpty(sessionItem.customPrompt) ? sessionItem.customPrompt : 'Generated self-study practice quiz.'}"></p>
+                
+                <!-- Badges -->
+                <div class="flex items-center gap-2 flex-wrap" style="display:flex; flex-wrap:wrap; gap:8px;">
+                  <span class="setting-tag"><i data-lucide="file" style="width:10px;height:10px;"></i> <span th:text="${sessionItem.sourceType}">UPLOADED_FILE</span></span>
+                  <span class="setting-tag"><i data-lucide="bar-chart-2" style="width:10px;height:10px;"></i> <span th:text="${sessionItem.difficulty}">MEDIUM</span></span>
+                  <span class="setting-tag"><i data-lucide="help-circle" style="width:10px;height:10px;"></i> <span th:text="${sessionItem.questionType}">MCQ</span></span>
+                  <span class="setting-tag"><i data-lucide="hash" style="width:10px;height:10px;"></i> <span th:text="|${sessionItem.totalQuestions} Questions|">5 Qs</span></span>
+                  <span class="setting-tag"><i data-lucide="check-square" style="width:10px;height:10px;"></i> Answered: <span th:text="${sessionItem.answeredCount}">0</span></span>
+                  <span class="setting-tag"><i data-lucide="award" style="width:10px;height:10px;"></i> Correct: <span th:text="|${sessionItem.correctCount}/${sessionItem.totalQuestions}|">4/5</span></span>
+                  <span class="setting-tag"><i data-lucide="trending-up" style="width:10px;height:10px;"></i> Accuracy: <span th:text="|${sessionItem.accuracy}%|">80%</span></span>
+                  <span class="setting-tag"><i data-lucide="eye" style="width:10px;height:10px;"></i> Revealed: <span th:text="${sessionItem.revealedCount}">0</span></span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Actions Area -->
+            <div class="card-actions" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
+              <a th:href="@{/student/ai-practice/{id}(id=${sessionItem.practiceSessionId})}" th:if="${sessionItem.status != 'COMPLETED'}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 14px; background: rgba(26,115,232,0.06); color:var(--primary);">
+                Continue <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+              </a>
+              <a th:href="@{/student/ai-practice/{id}/result(id=${sessionItem.practiceSessionId})}" th:if="${sessionItem.status == 'COMPLETED'}" class="btn btn-soft btn-sm flex items-center gap-1" style="border-radius:10px; font-weight:800; padding:8px 14px; background: rgba(76,175,80,0.06); color:var(--green);">
+                View Result <i data-lucide="award" style="width:14px;height:14px"></i>
+              </a>
+              <form th:action="@{/student/ai-practice/{id}/delete(id=${sessionItem.practiceSessionId})}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-outline btn-sm text-red" style="border-color: rgba(234, 67, 53, 0.25); background: #fff; padding: 8px 12px; border-radius: 10px; font-weight:700;" onclick="return confirm('Delete this practice session?')">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px;"></i> Delete
+                </button>
+              </form>
+            </div>
+            
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="card card-pad text-center muted" th:if="${#lists.isEmpty(history)}" style="border-radius: 18px; padding: 40px; border: 1px solid #e2e8f0; width: 100%; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06); background: #fff;">
+          <div style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 12px;"><i data-lucide="folder-open"></i></div>
+          <p style="font-weight: 600; color: #64748b;">No practice history found.</p>
+          <a th:href="@{/student/ai-practice}" class="btn btn-primary btn-sm mt-3" style="font-weight:800; border-radius:10px;"><i data-lucide="plus"></i> Create New Practice</a>
+        </div>
       </div>
     </div>
   </div>

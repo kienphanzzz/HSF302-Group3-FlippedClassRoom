@@ -104,9 +104,6 @@
                 <div class="profile-name" th:text="${currentUser.fullName}">Name</div>
                 <div class="profile-role" th:text="${#strings.toLowerCase(session.currentUserRole)}">role</div>
             </div>
-            <a th:href="@{/profile}" title="Profile" style="color:var(--muted);">
-                <i data-lucide="settings" style="width:15px;"></i>
-            </a>
         </div>
 
         <!-- Logout -->

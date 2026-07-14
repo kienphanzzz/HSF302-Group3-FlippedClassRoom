@@ -5,6 +5,7 @@ import com.example.fcms.service.StudentLearningService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
@@ -165,7 +166,9 @@ public class StudentLearningController {
     }
 
     @GetMapping("/content/{contentId}")
-    public String viewContent(@PathVariable Long contentId, HttpSession session) {
+    public String viewContent(@PathVariable Long contentId,
+                              RedirectAttributes redirectAttributes,
+                              HttpSession session) {
         Long studentId = getStudentId(session);
         Optional<ContentResource> contentOpt = studentLearningService.getContentResource(studentId, contentId);
         if (contentOpt.isEmpty()) {
@@ -180,6 +183,12 @@ public class StudentLearningController {
             return "redirect:" + resource.getExternalUrl();
         }
         if (resource.getFilePath() != null && !resource.getFilePath().isEmpty()) {
+            String localPath = resource.getFilePath().replace("/uploads/", "uploads/");
+            java.io.File file = new java.io.File(localPath);
+            if (!file.exists()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "The file '" + (resource.getOriginalFileName() != null ? resource.getOriginalFileName() : "material") + "' is missing on the server. Please contact your teacher to re-upload it.");
+                return "redirect:/student/nodes/" + resource.getLearningNode().getNodeId();
+            }
             return "redirect:" + resource.getFilePath();
         }
         
