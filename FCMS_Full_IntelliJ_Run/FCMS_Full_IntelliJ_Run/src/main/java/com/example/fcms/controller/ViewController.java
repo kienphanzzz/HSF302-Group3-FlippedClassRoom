@@ -1,13 +1,45 @@
 package com.example.fcms.controller;
 
+import com.example.fcms.entity.*;
+import com.example.fcms.repository.*;
+import com.example.fcms.service.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Collections;
+import java.util.List;
 
 @Controller
 public class ViewController {
+
+    private final UserRepository userRepository;
+    private final ClassRoomRepository classRoomRepository;
+    private final LearningNodeRepository learningNodeRepository;
+    private final TeacherQuestionService teacherQuestionService;
+    private final TeacherProgressService teacherProgressService;
+
+    public ViewController(UserRepository userRepository,
+                          ClassRoomRepository classRoomRepository,
+                          LearningNodeRepository learningNodeRepository,
+                          TeacherQuestionService teacherQuestionService,
+                          TeacherProgressService teacherProgressService) {
+        this.userRepository = userRepository;
+        this.classRoomRepository = classRoomRepository;
+        this.learningNodeRepository = learningNodeRepository;
+        this.teacherQuestionService = teacherQuestionService;
+        this.teacherProgressService = teacherProgressService;
+    }
+
+    private User getLoggedInTeacher(HttpSession session) {
+        Long userId = (Long) session.getAttribute("currentUserId");
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId).orElse(null);
+    }
 
     @GetMapping({"/", "/login"})
     public String loginPage() {
@@ -66,20 +98,71 @@ public class ViewController {
         return "redirect:/student/ai-practice";
     }
 
-    // ─── Teacher Portal Redirects ──────────────────────────────────────────
+    // ─── Teacher Portal Mappings ──────────────────────────────────────────
     @GetMapping("/teacher/classes")
-    public String teacherClasses() {
-        return "redirect:/dashboard";
+    public String teacherClasses(Model model, HttpSession session) {
+        User teacher = getLoggedInTeacher(session);
+        if (teacher == null) {
+            return "redirect:/login";
+        }
+        model.addAttribute("title", "My Classes");
+        model.addAttribute("activePage", "classes");
+        model.addAttribute("currentUser", teacher);
+
+        List<ClassRoom> activeClasses = classRoomRepository.findByTeacherAndStatus(teacher, "ACTIVE");
+        List<ClassRoom> archivedClasses = classRoomRepository.findByTeacherAndStatus(teacher, "ARCHIVED");
+
+        model.addAttribute("activeClasses", activeClasses);
+        model.addAttribute("archivedClasses", archivedClasses);
+
+        return "teacher/classes";
     }
 
     @GetMapping("/teacher/question-bank")
-    public String questionBank() {
-        return "redirect:/dashboard";
+    public String questionBank(Model model, HttpSession session) {
+        User teacher = getLoggedInTeacher(session);
+        if (teacher == null) {
+            return "redirect:/login";
+        }
+        model.addAttribute("title", "Question Bank");
+        model.addAttribute("activePage", "question-bank");
+        model.addAttribute("currentUser", teacher);
+
+        List<Question> questions = teacherQuestionService.getQuestionsWithOptions(teacher.getUserId());
+        model.addAttribute("questions", questions);
+
+        // Fetch topics for modal drop-down selection
+        List<LearningNode> topics = learningNodeRepository.findByClassRoom_Teacher_UserId(teacher.getUserId());
+        model.addAttribute("topics", topics);
+
+        return "teacher/question-bank";
     }
 
     @GetMapping("/teacher/progress")
-    public String teacherProgress() {
-        return "redirect:/dashboard";
+    public String teacherProgress(@RequestParam(required = false) Long classId, Model model, HttpSession session) {
+        User teacher = getLoggedInTeacher(session);
+        if (teacher == null) {
+            return "redirect:/login";
+        }
+        model.addAttribute("title", "Student Progress");
+        model.addAttribute("activePage", "progress");
+        model.addAttribute("currentUser", teacher);
+
+        List<ClassRoom> classes = classRoomRepository.findByTeacherAndStatus(teacher, "ACTIVE");
+        model.addAttribute("classes", classes);
+
+        if (classId == null && !classes.isEmpty()) {
+            classId = classes.get(0).getClassId();
+        }
+
+        if (classId != null) {
+            model.addAttribute("selectedClassId", classId);
+            model.addAttribute("progressList", teacherProgressService.getStudentsProgress(classId));
+        } else {
+            model.addAttribute("progressList", Collections.emptyList());
+        }
+
+        return "teacher/progress";
     }
 
     @GetMapping("/teacher/dashboard")
@@ -87,4 +170,3 @@ public class ViewController {
         return "redirect:/dashboard";
     }
 }
-

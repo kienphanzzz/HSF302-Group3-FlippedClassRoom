@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='My Classes')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='My Classes', content=~{::content})}">
+  <div th:fragment="content">
+    <style>
+      .class-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 20px rgba(15, 23, 36, 0.02);
+      }
+      .class-table th {
+        background: #f8fafc;
+        padding: 14px 18px;
+        text-align: left;
+        font-weight: 800;
+        font-size: 13px;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+      }
+      .class-table td {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13.5px;
+        color: var(--text);
+      }
+      .class-table tr:last-child td {
+        border-bottom: 0;
+      }
+      .class-table tr:hover td {
+        background: #f8fafc;
+      }
+      .search-filter-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .search-wrapper {
+        position: relative;
+        flex: 1;
+        max-width: 380px;
+      }
+      .search-wrapper i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        width: 16px;
+        height: 16px;
+      }
+      .search-wrapper input {
+        width: 100%;
+        padding: 10px 12px 10px 38px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+        font-size: 13.5px;
+      }
+      .search-wrapper input:focus {
+        border-color: rgba(26,115,232,0.45);
+      }
+      .filter-wrapper select {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        outline: none;
+      }
+    </style>
+
+    <div class="page-title-row">
+      <div>
+        <h1 class="h2 mb-1">My Classrooms</h1>
+        <p class="muted">Manage and monitor all active and archived flipped classrooms.</p>
+      </div>
+      <div>
+        <a th:href="@{/dashboard}" class="btn btn-primary"><i data-lucide="plus"></i> Create New Class</a>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="card card-pad mb-4 flex items-center gap-3" style="background:#e6f4ea; border-color:#bbf7d0; color:var(--green)">
+      <i data-lucide="check-circle-2"></i>
+      <span th:text="${successMessage}">Success!</span>
+    </div>
+    <div th:if="${errorMessage}" class="card card-pad mb-4 flex items-center gap-3" style="background:#fdf2f2; border-color:#fecaca; color:var(--red)">
+      <i data-lucide="alert-circle"></i>
+      <span th:text="${errorMessage}">Error!</span>
+    </div>
+
+    <div class="search-filter-row">
+      <div class="search-wrapper">
+        <i data-lucide="search"></i>
+        <input type="text" id="classSearchInput" onkeyup="filterClassTable()" placeholder="Search classes by name or code..." />
+      </div>
+      <div class="filter-wrapper">
+        <select id="classStatusFilter" onchange="filterClassTable()">
+          <option value="ALL">All Classrooms</option>
+          <option value="ACTIVE" selected>Active Only</option>
+          <option value="ARCHIVED">Archived Only</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="class-table" id="classroomTable">
+        <thead>
+          <tr>
+            <th>Classroom Details</th>
+            <th>Subject Code</th>
+            <th>Class Code</th>
+            <th>Created Date</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Active Classes -->
+          <tr th:each="classroom : ${activeClasses}" class="class-row" data-status="ACTIVE">
+            <td>
+              <div style="font-weight:800; font-size:14.5px; color:var(--primary);" th:text="${classroom.className}">Data Structures</div>
+              <div class="small muted mt-1" th:text="${classroom.description ?: 'No description provided.'}">Class description</div>
+            </td>
+            <td><code th:text="${classroom.subjectCode ?: 'N/A'}">DSA301</code></td>
+            <td><strong th:text="${classroom.classCode}">X1Y2Z3</strong></td>
+            <td th:text="${#temporals.format(classroom.createdAt, 'dd/MM/yyyy')}">18/12/2025</td>
+            <td><span class="tag tag-green">ACTIVE</span></td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex; gap:8px; justify-content:flex-end;">
+                <a th:href="@{/teacher/classes/{id}(id=${classroom.classId})}" class="btn btn-soft btn-sm flex items-center gap-1" style="font-weight:800; border-radius:8px;">
+                  Open Class <i data-lucide="chevron-right" style="width:14px;height:14px"></i>
+                </a>
+                <form th:action="@{/teacher/classes/{id}/toggle-archive(id=${classroom.classId})}" method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-outline btn-sm text-red" style="font-weight:700; border-radius:8px;" onclick="return confirm('Archive this class? Students will no longer see it on their active list.')">
+                    Archive
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Archived Classes -->
+          <tr th:each="classroom : ${archivedClasses}" class="class-row" data-status="ARCHIVED">
+            <td>
+              <div style="font-weight:800; font-size:14.5px; color:#64748b;" th:text="${classroom.className}">Old Class</div>
+              <div class="small muted mt-1" th:text="${classroom.description ?: 'No description provided.'}">Class description</div>
+            </td>
+            <td><code th:text="${classroom.subjectCode ?: 'N/A'}">DSA301</code></td>
+            <td><strong th:text="${classroom.classCode}">X1Y2Z3</strong></td>
+            <td th:text="${#temporals.format(classroom.createdAt, 'dd/MM/yyyy')}">18/12/2025</td>
+            <td><span class="tag tag-gray">ARCHIVED</span></td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex; gap:8px; justify-content:flex-end;">
+                <form th:action="@{/teacher/classes/{id}/toggle-archive(id=${classroom.classId})}" method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-soft btn-sm text-green" style="font-weight:800; border-radius:8px; background:rgba(76,175,80,0.06);">
+                    Restore Class
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty Row -->
+          <tr id="emptyClassRow" style="display:none;">
+            <td colspan="6" class="text-center py-5 muted">
+              <div style="font-size:32px; color:var(--muted);"><i data-lucide="folder-open"></i></div>
+              <p style="font-weight:700;" class="mt-2">No matching classrooms found.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script th:replace="~{fragments/layout :: scripts}"></script>
+<script>
+  function filterClassTable() {
+    const searchVal = document.getElementById('classSearchInput').value.toLowerCase().trim();
+    const statusVal = document.getElementById('classStatusFilter').value;
+    const rows = document.querySelectorAll('.class-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      const status = row.getAttribute('data-status');
+      
+      const matchesSearch = text.includes(searchVal);
+      const matchesStatus = (statusVal === 'ALL' || status === statusVal);
+
+      if (matchesSearch && matchesStatus) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    document.getElementById('emptyClassRow').style.display = (visibleCount === 0) ? '' : 'none';
+  }
+
+  // Initial trigger to filter active classes
+  document.addEventListener('DOMContentLoaded', () => {
+    filterClassTable();
+  });
+</script>
+</body>
+</html>

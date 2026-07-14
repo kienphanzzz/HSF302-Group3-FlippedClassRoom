@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(title='Student Progress')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: page(title='Student Progress', content=~{::content})}">
+  <div th:fragment="content">
+    <style>
+      .progress-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 20px rgba(15, 23, 36, 0.02);
+      }
+      .progress-table th {
+        background: #f8fafc;
+        padding: 14px 18px;
+        text-align: left;
+        font-weight: 800;
+        font-size: 13px;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+      }
+      .progress-table td {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13.5px;
+        color: var(--text);
+        vertical-align: middle;
+      }
+      .progress-table tr:last-child td {
+        border-bottom: 0;
+      }
+      .progress-table tr:hover td {
+        background: #f8fafc;
+      }
+      .progress-bar-container {
+        width: 100%;
+        max-width: 160px;
+        background: #e2e8f0;
+        border-radius: 99px;
+        height: 8px;
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: var(--primary);
+      }
+      .progress-bar-fill.green {
+        background: var(--green);
+      }
+      .progress-bar-fill.orange {
+        background: var(--orange);
+      }
+      .progress-bar-fill.red {
+        background: var(--red);
+      }
+      .selector-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.5rem;
+        background: #f8fafc;
+        padding: 14px 18px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+      }
+    </style>
+
+    <div class="page-title-row">
+      <div>
+        <h1 class="h2 mb-1">Learning Analytics</h1>
+        <p class="muted">Monitor preparation rates, AI practice performance, and student engagements.</p>
+      </div>
+    </div>
+
+    <!-- Dropdown Selector -->
+    <div class="selector-row">
+      <span class="small font-bold text-muted" style="font-size:13.5px;"><i data-lucide="filter" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i> Select Classroom:</span>
+      <select id="classSelector" onchange="window.location.href='/teacher/progress?classId=' + this.value" style="padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:#fff; font-size:13.5px; font-weight:800; outline:none; min-width:260px;">
+        <option value="">-- Choose Class --</option>
+        <option th:each="c : ${classes}" th:value="${c.classId}" th:text="|${c.subjectCode != null ? c.subjectCode + ' - ' : ''}${c.className}|" th:selected="${c.classId == selectedClassId}">Class</option>
+      </select>
+    </div>
+
+    <div th:if="${selectedClassId != null}">
+      
+      <!-- Statistics Cards -->
+      <div class="grid mb-5" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;" 
+           th:with="totalStudents=${progressList.size()},
+                    atRiskCount=${#lists.toList(progressList).stream().filter(p -> p.atRisk).count()},
+                    avgPrep=${totalStudents == 0 ? 0.0 : #lists.toList(progressList).stream().mapToDouble(p -> p.prepRate).average().orElse(0.0)}">
+        
+        <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--primary);">
+          <div class="muted small mb-1">Enrolled Students</div>
+          <div class="h1 font-extrabold text-primary" th:text="${totalStudents}">0</div>
+        </div>
+
+        <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--green);">
+          <div class="muted small mb-1">Avg Preparation Rate</div>
+          <div class="h1 font-extrabold text-green" th:text="|${#numbers.formatDecimal(avgPrep, 1, 1)}%|">0.0%</div>
+        </div>
+
+        <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--red);">
+          <div class="muted small mb-1">At-Risk Students (<40%)</div>
+          <div class="h1 font-extrabold text-red" th:text="${atRiskCount}">0</div>
+        </div>
+      </div>
+
+      <!-- Students Progress Table -->
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table class="progress-table">
+          <thead>
+            <tr>
+              <th>Student Details</th>
+              <th>Pre-class Preparation</th>
+              <th>AI Practice Count</th>
+              <th>Avg AI Accuracy</th>
+              <th style="text-align:right;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="student : ${progressList}">
+              <td>
+                <div style="font-weight:800; font-size:14px; color:var(--text);" th:text="${student.studentName}">Alex</div>
+                <div class="small muted mt-1" th:text="${student.studentEmail}">alex@gmail.com</div>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center;">
+                  <div class="progress-bar-container">
+                    <div class="progress-bar-fill" th:classappend="${student.prepRate >= 70 ? 'green' : (student.prepRate >= 40 ? 'orange' : 'red')}" th:style="|width: ${student.prepRate}%|"></div>
+                  </div>
+                  <strong style="font-size:13px;" th:text="|${student.prepRate}%|">0%</strong>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="tag tag-primary" style="font-weight:750;" th:text="|${student.aiCount} sessions|">0 sessions</span>
+                </div>
+              </td>
+              <td>
+                <div style="font-weight:800; color:var(--text);" th:text="${student.aiCount == 0} ? '—' : |${student.avgAccuracy}%|">—</div>
+              </td>
+              <td style="text-align:right;">
+                <span class="tag tag-green" th:if="${!student.atRisk}"><i data-lucide="check-circle" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px;"></i> On Track</span>
+                <span class="tag tag-red" th:if="${student.atRisk}"><i data-lucide="alert-triangle" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:2px;"></i> At Risk</span>
+              </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(progressList)}">
+              <td colspan="5" class="text-center py-5 muted">
+                <div style="font-size:32px; color:var(--muted);"><i data-lucide="users"></i></div>
+                <p style="font-weight:700;" class="mt-2">No students enrolled in this classroom yet.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- Empty Classroom Selection State -->
+    <div class="card card-pad text-center py-5" th:if="${selectedClassId == null}">
+      <div style="font-size:42px; color:var(--muted); margin-bottom:12px;"><i data-lucide="bar-chart-2"></i></div>
+      <h3 class="h3">No Classroom Selected</h3>
+      <p class="muted small">Please select a classroom from the dropdown list above to view student learning progress statistics.</p>
+    </div>
+
+  </div>
+</div>
+
+<script th:replace="~{fragments/layout :: scripts}"></script>
+</body>
+</html>
