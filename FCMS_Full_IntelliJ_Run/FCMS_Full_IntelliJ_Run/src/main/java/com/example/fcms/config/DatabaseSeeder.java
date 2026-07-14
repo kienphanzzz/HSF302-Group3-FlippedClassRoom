@@ -3,6 +3,7 @@ package com.example.fcms.config;
 import com.example.fcms.entity.*;
 import com.example.fcms.repository.*;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,84 +20,123 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final LearningNodeRepository learningNodeRepository;
     private final ContentResourceRepository contentResourceRepository;
     private final AssignmentRepository assignmentRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository,
                           ClassRoomRepository classRoomRepository,
                           EnrollmentRepository enrollmentRepository,
                           LearningNodeRepository learningNodeRepository,
                           ContentResourceRepository contentResourceRepository,
-                          AssignmentRepository assignmentRepository) {
+                          AssignmentRepository assignmentRepository,
+                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.classRoomRepository = classRoomRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.learningNodeRepository = learningNodeRepository;
         this.contentResourceRepository = contentResourceRepository;
         this.assignmentRepository = assignmentRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // Check if demo student or classroom already exists to avoid duplication
-        if (userRepository.findByEmail("demo-student@fcms.local").isPresent() || classRoomRepository.existsByClassCode("SE2024")) {
-            return;
+        // 1. Create Teacher
+        User teacher;
+        var existingTeacher = userRepository.findByEmail("teacher@fcms.local");
+        if (existingTeacher.isPresent()) {
+            teacher = existingTeacher.get();
+            if ("123".equals(teacher.getPasswordHash())) {
+                teacher.setPasswordHash(passwordEncoder.encode("123"));
+                userRepository.save(teacher);
+            }
+        } else {
+            teacher = User.builder()
+                    .fullName("Prof. Tran Phuong")
+                    .email("teacher@fcms.local")
+                    .passwordHash(passwordEncoder.encode("123"))
+                    .role("TEACHER")
+                    .status("ACTIVE")
+                    .build();
+            teacher = userRepository.save(teacher);
         }
 
-        // 1. Create Teacher
-        User teacher = User.builder()
-                .fullName("Prof. Tran Phuong")
-                .email("teacher@fcms.local")
-                .passwordHash("123") // simple password hash for demo
-                .role("TEACHER")
-                .status("ACTIVE")
-                .build();
-        teacher = userRepository.save(teacher);
-
-        // 2. Create Student (Should auto-increment to ID = 2 if DB is empty)
-        User student = User.builder()
-                .fullName("Alex Nguyen")
-                .email("demo-student@fcms.local")
-                .passwordHash("123")
-                .role("STUDENT")
-                .status("ACTIVE")
-                .build();
-        student = userRepository.save(student);
+        // 2. Create Student
+        User student;
+        var existingStudent = userRepository.findByEmail("demo-student@fcms.local");
+        if (existingStudent.isPresent()) {
+            student = existingStudent.get();
+            if ("123".equals(student.getPasswordHash())) {
+                student.setPasswordHash(passwordEncoder.encode("123"));
+                userRepository.save(student);
+            }
+        } else {
+            student = User.builder()
+                    .fullName("Alex Nguyen")
+                    .email("demo-student@fcms.local")
+                    .passwordHash(passwordEncoder.encode("123"))
+                    .role("STUDENT")
+                    .status("ACTIVE")
+                    .build();
+            student = userRepository.save(student);
+        }
 
         // 3. Create Classes
-        ClassRoom class1 = ClassRoom.builder()
-                .className("Software Engineering")
-                .subjectCode("SWE301")
-                .classCode("SE2024")
-                .teacher(teacher)
-                .status("ACTIVE")
-                .description("Pre-class flip classroom for Software Engineering concepts.")
-                .build();
-        class1 = classRoomRepository.save(class1);
+        ClassRoom class1;
+        var existingClass1 = classRoomRepository.findByClassCode("SE2024");
+        if (existingClass1.isPresent()) {
+            class1 = existingClass1.get();
+        } else {
+            class1 = ClassRoom.builder()
+                    .className("Software Engineering")
+                    .subjectCode("SWE301")
+                    .classCode("SE2024")
+                    .teacher(teacher)
+                    .status("ACTIVE")
+                    .description("Pre-class flip classroom for Software Engineering concepts.")
+                    .build();
+            class1 = classRoomRepository.save(class1);
+        }
 
-        ClassRoom class2 = ClassRoom.builder()
-                .className("Data Structures & Algorithms")
-                .subjectCode("DSA301")
-                .classCode("DSA301")
-                .teacher(teacher)
-                .status("ACTIVE")
-                .description("Pre-class flip classroom for Algorithms concepts.")
-                .build();
-        class2 = classRoomRepository.save(class2);
+        ClassRoom class2;
+        var existingClass2 = classRoomRepository.findByClassCode("DSA301");
+        if (existingClass2.isPresent()) {
+            class2 = existingClass2.get();
+        } else {
+            class2 = ClassRoom.builder()
+                    .className("Data Structures & Algorithms")
+                    .subjectCode("DSA301")
+                    .classCode("DSA301")
+                    .teacher(teacher)
+                    .status("ACTIVE")
+                    .description("Pre-class flip classroom for Algorithms concepts.")
+                    .build();
+            class2 = classRoomRepository.save(class2);
+        }
 
         // 4. Enroll Student in Classes
-        Enrollment enroll1 = Enrollment.builder()
-                .classRoom(class1)
-                .student(student)
-                .status("ACTIVE")
-                .build();
-        enrollmentRepository.save(enroll1);
+        if (enrollmentRepository.findByClassRoom_ClassIdAndStudent_UserId(class1.getClassId(), student.getUserId()).isEmpty()) {
+            Enrollment enroll1 = Enrollment.builder()
+                    .classRoom(class1)
+                    .student(student)
+                    .status("ACTIVE")
+                    .build();
+            enrollmentRepository.save(enroll1);
+        }
 
-        Enrollment enroll2 = Enrollment.builder()
-                .classRoom(class2)
-                .student(student)
-                .status("ACTIVE")
-                .build();
-        enrollmentRepository.save(enroll2);
+        if (enrollmentRepository.findByClassRoom_ClassIdAndStudent_UserId(class2.getClassId(), student.getUserId()).isEmpty()) {
+            Enrollment enroll2 = Enrollment.builder()
+                    .classRoom(class2)
+                    .student(student)
+                    .status("ACTIVE")
+                    .build();
+            enrollmentRepository.save(enroll2);
+        }
+
+        // Check if learning nodes already exist to avoid duplication
+        if (!learningNodeRepository.findByClassRoomClassIdOrderByOrderIndexAsc(class1.getClassId()).isEmpty()) {
+            return;
+        }
 
         // 5. Create Learning Nodes for Class 1 (Software Engineering)
         LearningNode node1 = LearningNode.builder()
