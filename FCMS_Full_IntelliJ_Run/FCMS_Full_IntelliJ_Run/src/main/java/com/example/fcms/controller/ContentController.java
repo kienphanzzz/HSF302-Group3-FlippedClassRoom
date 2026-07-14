@@ -39,25 +39,25 @@ public class ContentController {
     }
 
     private User getLoggedInTeacher(HttpSession session) {
-        User user = (User) session.getAttribute("loggedInUser");
-        if (user == null || !"TEACHER".equals(user.getRole())) {
+        Long userId = (Long) session.getAttribute("currentUserId");
+        if (userId == null) {
             return userRepository.findAll().stream()
                     .filter(u -> "TEACHER".equals(u.getRole()))
                     .findFirst()
                     .orElse(null);
         }
-        return user;
+        return userRepository.findById(userId).orElse(null);
     }
 
     private User getLoggedInStudent(HttpSession session) {
-        User user = (User) session.getAttribute("loggedInUser");
-        if (user == null || !"STUDENT".equals(user.getRole())) {
+        Long userId = (Long) session.getAttribute("currentUserId");
+        if (userId == null) {
             return userRepository.findAll().stream()
                     .filter(u -> "STUDENT".equals(u.getRole()))
                     .findFirst()
                     .orElse(null);
         }
-        return user;
+        return userRepository.findById(userId).orElse(null);
     }
 
     // 1. Render Manage Content Page
