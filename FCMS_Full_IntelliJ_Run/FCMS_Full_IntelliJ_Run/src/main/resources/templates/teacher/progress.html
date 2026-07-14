@@ -93,10 +93,7 @@
     <div th:if="${selectedClassId != null}">
       
       <!-- Statistics Cards -->
-      <div class="grid mb-5" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;" 
-           th:with="totalStudents=${progressList.size()},
-                    atRiskCount=${#lists.toList(progressList).stream().filter(p -> p.atRisk).count()},
-                    avgPrep=${totalStudents == 0 ? 0.0 : #lists.toList(progressList).stream().mapToDouble(p -> p.prepRate).average().orElse(0.0)}">
+      <div class="grid mb-5" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
         
         <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--primary);">
           <div class="muted small mb-1">Enrolled Students</div>
@@ -109,7 +106,7 @@
         </div>
 
         <div class="card card-pad bg-secondary text-center" style="border-top: 4px solid var(--red);">
-          <div class="muted small mb-1">At-Risk Students (<40%)</div>
+          <div class="muted small mb-1">At-Risk Students (&lt;40%)</div>
           <div class="h1 font-extrabold text-red" th:text="${atRiskCount}">0</div>
         </div>
       </div>

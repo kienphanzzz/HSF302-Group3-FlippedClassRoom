@@ -157,9 +157,21 @@ public class ViewController {
 
         if (classId != null) {
             model.addAttribute("selectedClassId", classId);
-            model.addAttribute("progressList", teacherProgressService.getStudentsProgress(classId));
+            List<TeacherProgressService.StudentProgressDTO> progressList = teacherProgressService.getStudentsProgress(classId);
+            model.addAttribute("progressList", progressList);
+
+            int totalStudents = progressList.size();
+            long atRiskCount = progressList.stream().filter(p -> p.isAtRisk()).count();
+            double avgPrep = totalStudents == 0 ? 0.0 : progressList.stream().mapToDouble(p -> p.getPrepRate()).average().orElse(0.0);
+
+            model.addAttribute("totalStudents", totalStudents);
+            model.addAttribute("atRiskCount", atRiskCount);
+            model.addAttribute("avgPrep", avgPrep);
         } else {
             model.addAttribute("progressList", Collections.emptyList());
+            model.addAttribute("totalStudents", 0);
+            model.addAttribute("atRiskCount", 0);
+            model.addAttribute("avgPrep", 0.0);
         }
 
         return "teacher/progress";
