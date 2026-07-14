@@ -54,11 +54,11 @@
 
           <!-- Description -->
           <div style="flex:1;">
-            <span th:if="${log.activityType == 'VIEW_CONTENT'}" th:text="'Viewed material: ' + ${log.content.title}"></span>
-            <span th:if="${log.activityType == 'WATCH_VIDEO'}" th:text="'Watched video lecture: ' + ${log.content.title}"></span>
-            <span th:if="${log.activityType == 'OPEN_LINK'}" th:text="'Opened link: ' + ${log.content.title}"></span>
-            <span th:if="${log.activityType == 'TAKE_PRACTICE'}" th:text="'Took AI self-practice for: ' + ${log.content.title}"></span>
-            <span th:if="${log.activityType == 'SUBMIT_ASSIGNMENT'}" th:text="'Submitted assignment for: ' + ${log.learningNode.title}"></span>
+            <span th:if="${log.activityType == 'VIEW_CONTENT'}" th:text="'Viewed material: ' + ${log.content != null ? log.content.title : 'Material'}"></span>
+            <span th:if="${log.activityType == 'WATCH_VIDEO'}" th:text="'Watched video lecture: ' + ${log.content != null ? log.content.title : 'Video'}"></span>
+            <span th:if="${log.activityType == 'OPEN_LINK'}" th:text="'Opened link: ' + ${log.content != null ? log.content.title : 'Link'}"></span>
+            <span th:if="${log.activityType == 'TAKE_PRACTICE'}" th:text="'Took AI self-practice for: ' + ${log.learningNode != null ? log.learningNode.title : 'Practice'}"></span>
+            <span th:if="${log.activityType == 'SUBMIT_ASSIGNMENT'}" th:text="'Submitted assignment for: ' + ${log.learningNode != null ? log.learningNode.title : 'Assignment'}"></span>
             
             <div class="small text-muted" th:text="${log.classRoom.className} + ' · ' + ${#temporals.format(log.createdAt, 'MMM dd, yyyy HH:mm')}">Class name · Date</div>
           </div>
